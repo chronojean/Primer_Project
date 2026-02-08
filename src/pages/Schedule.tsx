@@ -6,7 +6,6 @@ import { MapPin } from 'lucide-react';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const CLASS_MINUTES = 90;
-const BREAK_MINUTES = 15;
 const TIME_SLOTS = [
     '08:00', '09:45', '11:30', '13:15'
 ];
@@ -211,7 +210,6 @@ export const Schedule = () => {
         });
     });
 
-    const getBlockAt = (day: string, time: string) => blockBySlot.get(slotKey(day, time));
     const getSectionAt = (day: string, time: string) => sectionBySlot.get(slotKey(day, time));
 
     const getSectionBlocks = (section: Section) => {

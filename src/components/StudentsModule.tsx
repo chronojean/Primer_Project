@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { StorageService } from '../services/storage';
 import { Student, Section, Attendance, Enrollment } from '../types';
 import { Button } from './ui/Button';
-import { TableRow, TableCell } from './ui/Table';
 import { Modal } from './ui/Modal';
 import { Input, Select } from './ui/Input';
 import { Pencil, Trash2, Plus, ClipboardList, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
