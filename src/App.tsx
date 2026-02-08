@@ -29,7 +29,9 @@ const router = createBrowserRouter([
             { path: 'payments', element: <Payments /> },
         ]
     }
-]);
+], {
+    basename: import.meta.env.BASE_URL
+});
 
 function App() {
     return (
