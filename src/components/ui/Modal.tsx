@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { Button } from './Button';
 
 interface ModalProps {
@@ -10,6 +10,7 @@ interface ModalProps {
 
 export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
     if (!isOpen) return null;
+    const titleId = useId();
 
     return (
         <div style={{
@@ -25,7 +26,11 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
             justifyContent: 'center',
             zIndex: 1000,
         }}>
-            <div style={{
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                style={{
                 backgroundColor: 'var(--bg-card)',
                 padding: '2rem',
                 borderRadius: '0.75rem',
@@ -35,8 +40,8 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
                 border: '1px solid var(--border-color)'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
-                    <Button variant="secondary" size="sm" onClick={onClose} style={{ marginLeft: 'auto' }}>✕</Button>
+                    <h2 id={titleId} style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
+                    <Button variant="secondary" size="sm" onClick={onClose} style={{ marginLeft: 'auto' }} aria-label="Close dialog">✕</Button>
                 </div>
                 <div>
                     {children}

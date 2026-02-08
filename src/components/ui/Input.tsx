@@ -1,14 +1,17 @@
-import React, { InputHTMLAttributes } from 'react';
+import React, { InputHTMLAttributes, useId } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
 }
 
-export const Input = ({ label, ...props }: InputProps) => {
+export const Input = ({ label, id, ...props }: InputProps) => {
+    const autoId = useId();
+    const inputId = id ?? autoId;
     return (
         <div style={{ marginBottom: '1rem' }}>
-            {label && <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</label>}
+            {label && <label htmlFor={inputId} style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</label>}
             <input
+                id={inputId}
                 style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
@@ -31,11 +34,14 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     options: { value: string, label: string }[];
 }
 
-export const Select = ({ label, options, ...props }: SelectProps) => {
+export const Select = ({ label, options, id, ...props }: SelectProps) => {
+    const autoId = useId();
+    const selectId = id ?? autoId;
     return (
         <div style={{ marginBottom: '1rem' }}>
-            {label && <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</label>}
+            {label && <label htmlFor={selectId} style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</label>}
             <select
+                id={selectId}
                 style={{
                     width: '100%',
                     padding: '0.65rem 0.8rem',

@@ -288,7 +288,15 @@ export const Attendance = () => {
     const renderBreadcrumbs = () => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
             <span
+                role="button"
+                tabIndex={0}
                 onClick={() => handleNavigate(() => { setSelectedCourseId(''); setViewMode('courses'); })}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleNavigate(() => { setSelectedCourseId(''); setViewMode('courses'); });
+                    }
+                }}
                 style={{ cursor: 'pointer' }}
             >
                 Hierarchy
@@ -297,7 +305,15 @@ export const Attendance = () => {
                 <>
                     <ChevronRight size={14} />
                     <span
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleNavigate(() => { setSelectedSectionId(''); setViewMode('sections'); })}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleNavigate(() => { setSelectedSectionId(''); setViewMode('sections'); });
+                            }
+                        }}
                         style={{ cursor: 'pointer', fontWeight: viewMode === 'sections' ? 600 : 400, color: viewMode === 'sections' ? 'var(--primary)' : 'inherit' }}
                     >
                         {currentCourse?.name}
@@ -321,6 +337,14 @@ export const Attendance = () => {
                 <div
                     key={course.id}
                     onClick={() => setSelectedCourseId(course.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedCourseId(course.id);
+                        }
+                    }}
                     style={{
                         backgroundColor: 'var(--bg-card)',
                         padding: '1.5rem',
@@ -370,6 +394,14 @@ export const Attendance = () => {
                 <div
                     key={section.id}
                     onClick={() => setSelectedSectionId(section.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedSectionId(section.id);
+                        }
+                    }}
                     style={{
                         backgroundColor: 'var(--bg-card)',
                         padding: '1.5rem',
@@ -412,6 +444,14 @@ export const Attendance = () => {
             ))}
             <div
                 onClick={() => handleNavigate(() => { setSelectedCourseId(''); setViewMode('courses'); })}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleNavigate(() => { setSelectedCourseId(''); setViewMode('courses'); });
+                    }
+                }}
                 style={{
                     backgroundColor: 'transparent',
                     padding: '1.5rem',
@@ -654,6 +694,14 @@ export const Attendance = () => {
                                         <div
                                             key={student.id}
                                             onClick={() => toggleSelection(student.id)}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    toggleSelection(student.id);
+                                                }
+                                            }}
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -724,6 +772,14 @@ export const Attendance = () => {
                                 return (
                                     <div key={record.id}
                                         onClick={() => handleEditHistory(record)}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleEditHistory(record);
+                                            }
+                                        }}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -815,6 +871,14 @@ export const Attendance = () => {
                                     >
                                         <div
                                             onClick={() => setExpandedTimelineDate(isExpanded ? null : record.id)}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    setExpandedTimelineDate(isExpanded ? null : record.id);
+                                                }
+                                            }}
                                             style={{ padding: '1.25rem', cursor: 'pointer', transition: 'background-color 0.2s', backgroundColor: isExpanded ? 'var(--bg-hover)' : 'transparent' }}
                                         >
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -908,6 +972,14 @@ export const Attendance = () => {
                             {/* Level 1: Date Row */}
                             <div
                                 onClick={() => setExpandedDrilldownDate(isDateExpanded ? null : date)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setExpandedDrilldownDate(isDateExpanded ? null : date);
+                                    }
+                                }}
                                 style={{ padding: '1.25rem 1.5rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDateExpanded ? 'var(--bg-hover)' : 'transparent', transition: 'all 0.2s' }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -937,6 +1009,14 @@ export const Attendance = () => {
                                             <div key={record.id}>
                                                 <div
                                                     onClick={() => setExpandedSectionId(isSectionExpanded ? null : record.id)}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setExpandedSectionId(isSectionExpanded ? null : record.id);
+                                                        }
+                                                    }}
                                                     style={{ padding: '1rem 1.5rem 1rem 4rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isSectionExpanded ? 'white' : 'transparent', transition: 'all 0.2s', borderBottom: isSectionExpanded ? '1px solid var(--border-color)' : 'none' }}
                                                 >
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

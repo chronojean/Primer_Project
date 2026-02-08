@@ -250,12 +250,22 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
                                         transition: 'background-color 0.2s',
                                     }}
                                 >
-                                    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => toggleStudentExpand(student.id)}>
+                                    <button
+                                        type="button"
+                                        aria-expanded={isExpanded}
+                                        onClick={() => toggleStudentExpand(student.id)}
+                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', background: 'none', border: 'none', padding: 0 }}
+                                    >
                                         {isExpanded ? <ChevronDown size={20} color="#64748b" /> : <ChevronRight size={20} color="#94a3b8" />}
-                                    </div>
-                                    <div style={{ cursor: 'pointer', fontWeight: 500, color: 'var(--text-primary)' }} onClick={() => toggleStudentExpand(student.id)}>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-expanded={isExpanded}
+                                        onClick={() => toggleStudentExpand(student.id)}
+                                        style={{ cursor: 'pointer', fontWeight: 500, color: 'var(--text-primary)', background: 'none', border: 'none', padding: 0, textAlign: 'left' }}
+                                    >
                                         {formatStudentName(student.name)}
-                                    </div>
+                                    </button>
                                     <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{student.email}</div>
                                     <div style={{ fontSize: '0.875rem' }}>{calculateAge(student.birthDate)}</div>
                                     <div style={{ fontSize: '0.875rem' }}>{student.sex || '-'}</div>
@@ -281,10 +291,10 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
                                         )}
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <Button size="sm" variant="secondary" onClick={() => handleOpenModal(student)}>
+                                        <Button size="sm" variant="secondary" onClick={() => handleOpenModal(student)} aria-label="Edit student">
                                             <Pencil size={14} />
                                         </Button>
-                                        <Button size="sm" variant="danger" onClick={() => handleDelete(student.id)}>
+                                        <Button size="sm" variant="danger" onClick={() => handleDelete(student.id)} aria-label="Delete student">
                                             <Trash2 size={14} />
                                         </Button>
                                     </div>

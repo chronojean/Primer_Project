@@ -176,7 +176,15 @@ export const Courses = () => {
         return (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                 <span
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleNavigate(() => { setSelectedCourseId(''); setSelectedSectionId(''); setViewMode('courses'); })}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleNavigate(() => { setSelectedCourseId(''); setSelectedSectionId(''); setViewMode('courses'); });
+                        }
+                    }}
                     style={{ cursor: 'pointer' }}
                 >
                     Courses
@@ -185,7 +193,15 @@ export const Courses = () => {
                     <>
                         <ChevronRight size={14} />
                         <span
+                            role="button"
+                            tabIndex={0}
                             onClick={() => handleNavigate(() => { setSelectedSectionId(''); setViewMode('sections'); })}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleNavigate(() => { setSelectedSectionId(''); setViewMode('sections'); });
+                                }
+                            }}
                             style={{ cursor: 'pointer', fontWeight: viewMode === 'sections' ? 600 : 400, color: viewMode === 'sections' ? 'var(--primary)' : 'inherit' }}
                         >
                             {currentCourse?.name}
@@ -215,6 +231,15 @@ export const Courses = () => {
                     <div
                         key={course.id}
                         onClick={() => { setSelectedCourseId(course.id); setViewMode('sections'); }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setSelectedCourseId(course.id);
+                                setViewMode('sections');
+                            }
+                        }}
                         style={{
                             backgroundColor: 'var(--bg-card)',
                             padding: '1.5rem',
@@ -246,10 +271,10 @@ export const Courses = () => {
                                 <BookOpen size={24} />
                             </div>
                             <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                <Button size="sm" variant="ghost" onClick={(e) => handleOpenModal(e, course)} style={{ padding: '0.4rem' }}>
+                                <Button size="sm" variant="ghost" onClick={(e) => handleOpenModal(e, course)} style={{ padding: '0.4rem' }} aria-label="Edit course">
                                     <Pencil size={14} />
                                 </Button>
-                                <Button size="sm" variant="ghost" onClick={(e) => handleDelete(e, course.id)} style={{ padding: '0.4rem', color: '#ef4444' }}>
+                                <Button size="sm" variant="ghost" onClick={(e) => handleDelete(e, course.id)} style={{ padding: '0.4rem', color: '#ef4444' }} aria-label="Delete course">
                                     <Trash2 size={14} />
                                 </Button>
                             </div>
@@ -291,6 +316,14 @@ export const Courses = () => {
             {/* Add Course Card Placeholder */}
             <div
                 onClick={() => handleOpenModal()}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleOpenModal();
+                    }
+                }}
                 style={{
                     backgroundColor: 'transparent',
                     padding: '1.5rem',

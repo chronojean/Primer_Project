@@ -75,24 +75,42 @@ export const StorageService = {
     getSections: () => StorageService.getData<Section>(STORAGE_KEYS.SECTIONS),
     addSection: (section: Section) => {
         const sections = StorageService.getSections();
+        const toMinutes = (time: string) => {
+            const [h, m] = time.split(':').map(Number);
+            return h * 60 + m;
+        };
+        const addMinutes = (time: string, minutes: number) => {
+            const total = toMinutes(time) + minutes;
+            const endH = Math.floor(total / 60);
+            const endM = total % 60;
+            return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+        };
+        const getBlocks = (s: Section) => {
+            if (s.scheduleBlocks && s.scheduleBlocks.length > 0) {
+                return s.scheduleBlocks.map(b => ({
+                    day: b.day,
+                    start: b.startTime,
+                    end: addMinutes(b.startTime, 90)
+                }));
+            }
+            return s.days.map(day => ({
+                day,
+                start: s.startTime,
+                end: s.endTime
+            }));
+        };
         // Validate overlap
-        const overlap = sections.find(s => {
-            // 1. Check if ANY day overlaps
-            const dayOverlap = s.days.some(day => section.days.includes(day));
-            if (!dayOverlap) return false;
-
-            // 2. Check time overlap
-            const toMinutes = (time: string) => {
-                const [h, m] = time.split(':').map(Number);
-                return h * 60 + m;
-            };
-
-            const sStart = toMinutes(s.startTime);
-            const sEnd = toMinutes(s.endTime);
-            const newStart = toMinutes(section.startTime);
-            const newEnd = toMinutes(section.endTime);
-
-            return (sStart < newEnd) && (sEnd > newStart);
+        const overlap = sections.find(existing => {
+            const existingBlocks = getBlocks(existing);
+            const newBlocks = getBlocks(section);
+            return existingBlocks.some(eb => newBlocks.some(nb => {
+                if (eb.day !== nb.day) return false;
+                const eStart = toMinutes(eb.start);
+                const eEnd = toMinutes(eb.end);
+                const nStart = toMinutes(nb.start);
+                const nEnd = toMinutes(nb.end);
+                return (eStart < nEnd) && (eEnd > nStart);
+            }));
         });
 
         if (overlap) {
@@ -101,28 +119,50 @@ export const StorageService = {
         sections.push(section);
         StorageService.saveData(STORAGE_KEYS.SECTIONS, sections);
     },
-    updateSection: (section: Section) => {
+    updateSection: (section: Section, options?: { ignoreIds?: string[] }) => {
         const sections = StorageService.getSections();
         const index = sections.findIndex(s => s.id === section.id);
         if (index === -1) throw new Error('Section not found');
 
+        const toMinutes = (time: string) => {
+            const [h, m] = time.split(':').map(Number);
+            return h * 60 + m;
+        };
+        const addMinutes = (time: string, minutes: number) => {
+            const total = toMinutes(time) + minutes;
+            const endH = Math.floor(total / 60);
+            const endM = total % 60;
+            return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+        };
+        const getBlocks = (s: Section) => {
+            if (s.scheduleBlocks && s.scheduleBlocks.length > 0) {
+                return s.scheduleBlocks.map(b => ({
+                    day: b.day,
+                    start: b.startTime,
+                    end: addMinutes(b.startTime, 90)
+                }));
+            }
+            return s.days.map(day => ({
+                day,
+                start: s.startTime,
+                end: s.endTime
+            }));
+        };
+
         // Validate overlap (excluding self)
-        const otherSections = sections.filter(s => s.id !== section.id);
-        const overlap = otherSections.find(s => {
-            const dayOverlap = s.days.some(day => section.days.includes(day));
-            if (!dayOverlap) return false;
-
-            const toMinutes = (time: string) => {
-                const [h, m] = time.split(':').map(Number);
-                return h * 60 + m;
-            };
-
-            const sStart = toMinutes(s.startTime);
-            const sEnd = toMinutes(s.endTime);
-            const newStart = toMinutes(section.startTime);
-            const newEnd = toMinutes(section.endTime);
-
-            return (sStart < newEnd) && (sEnd > newStart);
+        const ignoreIds = options?.ignoreIds ?? [];
+        const otherSections = sections.filter(s => s.id !== section.id && !ignoreIds.includes(s.id));
+        const overlap = otherSections.find(existing => {
+            const existingBlocks = getBlocks(existing);
+            const newBlocks = getBlocks(section);
+            return existingBlocks.some(eb => newBlocks.some(nb => {
+                if (eb.day !== nb.day) return false;
+                const eStart = toMinutes(eb.start);
+                const eEnd = toMinutes(eb.end);
+                const nStart = toMinutes(nb.start);
+                const nEnd = toMinutes(nb.end);
+                return (eStart < nEnd) && (eEnd > nStart);
+            }));
         });
 
         if (overlap) {

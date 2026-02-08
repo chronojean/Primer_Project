@@ -4,6 +4,7 @@ import { BookOpen, DollarSign, Home, Users, UserCheck, CheckSquare, Calendar } f
 const NavItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
     <Link
         to={to}
+        aria-current={active ? 'page' : undefined}
         style={{
             display: 'flex',
             alignItems: 'center',
@@ -75,8 +76,8 @@ export const Layout = () => {
                 }}>
                     <h3 style={{ margin: 0, color: 'var(--text-primary)', fontWeight: 600 }}>Overview</h3>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>Help</button>
-                        <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>Settings</button>
+                        <button type="button" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>Help</button>
+                        <button type="button" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>Settings</button>
                     </div>
                 </header>
                 <div style={{ padding: '2.5rem', maxWidth: '1400px', margin: '0 auto' }}>

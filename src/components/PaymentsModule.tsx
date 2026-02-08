@@ -116,20 +116,36 @@ export const PaymentsModule = ({ studentId, hideHeader = false }: PaymentsModule
             )}
 
             <Table headers={[
-                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => handleSort('date')}>
+                <button
+                    type="button"
+                    onClick={() => handleSort('date')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                >
                     Date <SortIcon field="date" />
-                </div>,
+                </button>,
                 !studentId && (
-                    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => handleSort('student')}>
+                    <button
+                        type="button"
+                        onClick={() => handleSort('student')}
+                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                    >
                         Student <SortIcon field="student" />
-                    </div>
+                    </button>
                 ),
-                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => handleSort('concept')}>
+                <button
+                    type="button"
+                    onClick={() => handleSort('concept')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                >
                     Concept <SortIcon field="concept" />
-                </div>,
-                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => handleSort('amount')}>
+                </button>,
+                <button
+                    type="button"
+                    onClick={() => handleSort('amount')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                >
                     Amount <SortIcon field="amount" />
-                </div>
+                </button>
             ].filter(Boolean)}>
                 {getSortedPayments().map(payment => (
                     <TableRow key={payment.id}>

@@ -262,6 +262,14 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                             <div
                                 key={section.id}
                                 onClick={() => onSelectSection?.(section.id)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        onSelectSection?.(section.id);
+                                    }
+                                }}
                                 style={{
                                     backgroundColor: 'var(--bg-card)',
                                     padding: '1.5rem',
@@ -293,10 +301,10 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                                         {section.roomId ? `Room ${section.roomId}` : 'No Room'}
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                        <Button size="sm" variant="ghost" onClick={(e) => handleOpenModal(e, section)} style={{ padding: '0.4rem' }}>
+                                        <Button size="sm" variant="ghost" onClick={(e) => handleOpenModal(e, section)} style={{ padding: '0.4rem' }} aria-label="Edit section">
                                             <Pencil size={14} />
                                         </Button>
-                                        <Button size="sm" variant="ghost" onClick={(e) => handleDelete(e, section.id)} style={{ padding: '0.4rem', color: '#ef4444' }}>
+                                        <Button size="sm" variant="ghost" onClick={(e) => handleDelete(e, section.id)} style={{ padding: '0.4rem', color: '#ef4444' }} aria-label="Delete section">
                                             <Trash2 size={14} />
                                         </Button>
                                     </div>
@@ -339,6 +347,14 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                 {/* Add Section Card Placeholder */}
                 <div
                     onClick={() => handleOpenModal()}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleOpenModal();
+                        }
+                    }}
                     style={{
                         backgroundColor: 'transparent',
                         padding: '1.5rem',
@@ -833,6 +849,14 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                             <div
                                 key={student.id}
                                 onClick={() => toggleSelection(student.id)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        toggleSelection(student.id);
+                                    }
+                                }}
                                 style={{
                                     backgroundColor: isPending ? '#1e3a8a' : (isSelected ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-card)'),
                                     borderRadius: '0.75rem',

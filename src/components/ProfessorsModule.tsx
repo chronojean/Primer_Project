@@ -114,15 +114,27 @@ export const ProfessorsModule = ({ hideHeader = false }: ProfessorsModuleProps) 
             )}
 
             <Table headers={[
-                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => handleSort('name')}>
+                <button
+                    type="button"
+                    onClick={() => handleSort('name')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                >
                     Name <SortIcon field="name" />
-                </div>,
-                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => handleSort('email')}>
+                </button>,
+                <button
+                    type="button"
+                    onClick={() => handleSort('email')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                >
                     Email <SortIcon field="email" />
-                </div>,
-                <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => handleSort('specialization')}>
+                </button>,
+                <button
+                    type="button"
+                    onClick={() => handleSort('specialization')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                >
                     Specialization <SortIcon field="specialization" />
-                </div>,
+                </button>,
                 'Actions'
             ]}>
                 {getSortedProfessors().map(professor => (
@@ -139,10 +151,10 @@ export const ProfessorsModule = ({ hideHeader = false }: ProfessorsModuleProps) 
                         <TableCell>{professor.specialization}</TableCell>
                         <TableCell>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <Button size="sm" variant="secondary" onClick={() => handleOpenModal(professor)}>
+                                <Button size="sm" variant="secondary" onClick={() => handleOpenModal(professor)} aria-label="Edit professor">
                                     <Pencil size={14} />
                                 </Button>
-                                <Button size="sm" variant="danger" onClick={() => handleDelete(professor.id)}>
+                                <Button size="sm" variant="danger" onClick={() => handleDelete(professor.id)} aria-label="Delete professor">
                                     <Trash2 size={14} />
                                 </Button>
                             </div>

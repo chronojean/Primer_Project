@@ -12,6 +12,8 @@ export interface Section {
     days: string[]; // e.g., ["Mon", "Wed"]
     startTime: string; // "10:00"
     endTime: string; // "12:00"
+    scheduleBlocks?: { day: string; startTime: string }[]; // per-day schedule blocks (90 mins each)
+    color?: string; // optional hex/rgb color for schedule blocks
     startDate?: string; // "YYYY-MM-DD"
     endDate?: string; // "YYYY-MM-DD"
     schedule?: string; // Deprecated: for backward compatibility
