@@ -1,0 +1,233 @@
+.buttonIcon {
+    margin-right: 0.5rem;
+}
+
+.tableCard {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+
+.tableHeader {
+    display: grid;
+    grid-template-columns: 40px 1.5fr 1.5fr 80px 80px 100px 1.5fr 100px;
+    background-color: #f8fafc;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.emptyState {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.tableRow {
+    display: grid;
+    grid-template-columns: 40px 1.5fr 1.5fr 80px 80px 100px 1.5fr 100px;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.tableRowExpanded {
+    background-color: #f1f5f9;
+}
+
+.tableRowInactive {
+    opacity: 0.65;
+}
+
+.expandButton {
+    padding: 0;
+}
+
+.nameButton {
+    padding: 0;
+    justify-content: flex-start;
+    color: var(--text-primary);
+}
+
+.cellMuted {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.cellText {
+    font-size: 0.875rem;
+}
+
+.attendanceRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.attendanceProgress {
+    flex: 1;
+    height: 6px;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    background-color: #e2e8f0;
+    appearance: none;
+}
+
+.attendanceProgress::-webkit-progress-bar {
+    background-color: #e2e8f0;
+    border-radius: 0.25rem;
+}
+
+.attendanceProgress::-webkit-progress-value {
+    background-color: var(--progress-color, #10b981);
+    border-radius: 0.25rem;
+}
+
+.attendanceProgress::-moz-progress-bar {
+    background-color: var(--progress-color, #10b981);
+    border-radius: 0.25rem;
+}
+
+.attendanceProgresshigh {
+    --progress-color: #10b981;
+}
+
+.attendanceProgressmid {
+    --progress-color: #f59e0b;
+}
+
+.attendanceProgresslow {
+    --progress-color: #ef4444;
+}
+
+.attendanceValue {
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.attendanceValuehigh {
+    color: #10b981;
+}
+
+.attendanceValuemid {
+    color: #f59e0b;
+}
+
+.attendanceValuelow {
+    color: #ef4444;
+}
+
+.attendanceEmpty {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.actionGroup {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.expandedPanel {
+    padding: 2rem;
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.expandedGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.sectionTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sectionCard {
+    background-color: var(--bg-card);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.sectionCardHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.sectionName {
+    font-weight: 600;
+}
+
+.sectionActions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.statusBadge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    border: 1px solid currentColor;
+    opacity: 0.8;
+}
+
+.statusActive {
+    background-color: #f0fdf4;
+    color: #16a34a;
+}
+
+.statusInactive {
+    background-color: #f8fafc;
+    color: #64748b;
+}
+
+.sectionProgressRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sectionProgressValue {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.emptyCourses {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 1rem;
+    text-align: center;
+    border: 1px dashed var(--border-color);
+    border-radius: 0.5rem;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}

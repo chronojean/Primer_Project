@@ -1,0 +1,37 @@
+.buttonIcon {
+    margin-right: 0.5rem;
+}
+
+.sortButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.sortIconMuted {
+    opacity: 0.3;
+}
+
+.studentName {
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.amountValue {
+    color: #10b981;
+    font-weight: 700;
+}
+
+.emptyCell {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}

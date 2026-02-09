@@ -1,0 +1,210 @@
+.dashboardTitle {
+    margin: 0;
+}
+
+.buttonIcon {
+    margin-right: 0.5rem;
+}
+
+.statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.cardHeaderIcon {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background-color: var(--bg-hover);
+    border: 1px solid var(--border-color);
+}
+
+.cardHeaderTitle {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.overviewGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.studentsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+.statLabel {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.statValue {
+    margin: 0.25rem 0 0 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.statDivider {
+    border-left: 1px solid var(--border-color);
+    padding-left: 1rem;
+}
+
+.statDividerWide {
+    border-left: 1px solid var(--border-color);
+    padding-left: 1.5rem;
+}
+
+.statIconRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.attendanceHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.attendanceHeaderIcon {
+    color: #10b981;
+}
+
+.attendanceHeaderTitle {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.attendanceGrid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+}
+
+.attendanceCard {
+    transition: all 0.2s;
+}
+
+.attendanceCard:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.attendanceCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.attendanceCardTitle {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.attendanceCardSubtitle {
+    margin: 0.25rem 0 0 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.attendanceBadge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    flex-direction: column;
+}
+
+.attendanceBadgeValue {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.attendanceBadgeLabel {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.attendanceBadgeexcellent {
+    background-color: rgba(16, 185, 129, 0.12);
+}
+
+.attendanceBadgegood {
+    background-color: rgba(245, 158, 11, 0.12);
+}
+
+.attendanceBadgewarn {
+    background-color: rgba(249, 115, 22, 0.12);
+}
+
+.attendanceBadgepoor {
+    background-color: rgba(239, 68, 68, 0.12);
+}
+
+.attendanceBadgeValueexcellent {
+    color: #10b981;
+}
+
+.attendanceBadgeValuegood {
+    color: #f59e0b;
+}
+
+.attendanceBadgeValuewarn {
+    color: #f97316;
+}
+
+.attendanceBadgeValuepoor {
+    color: #ef4444;
+}
+
+.attendanceProgress {
+    width: 100%;
+    height: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: var(--border-color);
+    appearance: none;
+}
+
+.attendanceProgress::-webkit-progress-bar {
+    background-color: var(--border-color);
+    border-radius: 10px;
+}
+
+.attendanceProgress::-webkit-progress-value {
+    background-color: var(--progress-color, #10b981);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.attendanceProgress::-moz-progress-bar {
+    background-color: var(--progress-color, #10b981);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.attendanceProgressexcellent {
+    --progress-color: #10b981;
+}
+
+.attendanceProgressgood {
+    --progress-color: #f59e0b;
+}
+
+.attendanceProgresswarn {
+    --progress-color: #f97316;
+}
+
+.attendanceProgresspoor {
+    --progress-color: #ef4444;
+}

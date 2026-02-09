@@ -1,32 +1,7 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { Courses } from './pages/Courses';
-import { Students } from './pages/Students';
-import { Professors } from './pages/Professors';
-import { Payments } from './pages/Payments';
-import { Attendance } from './pages/Attendance';
-import { Schedule } from './pages/Schedule';
-import { ConfirmationProvider } from './context/ConfirmationContext';
-import { BackButtonProvider } from './context/BackButtonContext';
-
-const router = createBrowserRouter([
-    {
-        path: '/',
-        element: <Layout />,
-        children: [
-            { index: true, element: <Dashboard /> },
-            { path: 'schedule', element: <Schedule /> },
-            { path: 'courses', element: <Courses /> },
-            { path: 'attendance', element: <Attendance /> },
-            { path: 'students', element: <Students /> },
-            { path: 'professors', element: <Professors /> },
-            { path: 'payments', element: <Payments /> },
-        ]
-    }
-], {
-    basename: import.meta.env.BASE_URL
-});
+import { RouterProvider } from 'react-router-dom';
+import { router } from './routes';
+import { ConfirmationProvider } from './shared/hooks/useConfirmation';
+import { BackButtonProvider } from './shared/hooks/useBackButton';
 
 function App() {
     return (

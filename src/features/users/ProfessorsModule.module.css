@@ -1,0 +1,53 @@
+.buttonIcon {
+    margin-right: 0.5rem;
+}
+
+.sortButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.sortIconMuted {
+    opacity: 0.3;
+}
+
+.professorRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.professorAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #3f3f46;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.professorName {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.actionGroup {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.emptyCell {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
