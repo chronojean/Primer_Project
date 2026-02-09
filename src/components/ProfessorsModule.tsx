@@ -6,12 +6,14 @@ import { Table, TableRow, TableCell } from './ui/Table';
 import { Modal } from './ui/Modal';
 import { Input } from './ui/Input';
 import { Pencil, Trash2, Plus, UserCheck, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useConfirmation } from '../context/ConfirmationContext';
 
 interface ProfessorsModuleProps {
     hideHeader?: boolean;
 }
 
 export const ProfessorsModule = ({ hideHeader = false }: ProfessorsModuleProps) => {
+    const { showConfirmation } = useConfirmation();
     const [professors, setProfessors] = useState<Professor[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProfessor, setEditingProfessor] = useState<Professor | null>(null);
@@ -63,11 +65,16 @@ export const ProfessorsModule = ({ hideHeader = false }: ProfessorsModuleProps) 
         handleCloseModal();
     };
 
-    const handleDelete = (id: string) => {
-        if (confirm('Are you sure you want to delete this professor?')) {
-            StorageService.deleteProfessor(id);
-            loadProfessors();
-        }
+    const handleDelete = async (id: string) => {
+        const confirmed = await showConfirmation({
+            title: 'Delete Professor?',
+            message: 'Are you sure you want to delete this professor?',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        StorageService.deleteProfessor(id);
+        loadProfessors();
     };
 
     const getSortedProfessors = () => {
@@ -114,27 +121,33 @@ export const ProfessorsModule = ({ hideHeader = false }: ProfessorsModuleProps) 
             )}
 
             <Table headers={[
-                <button
+                <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleSort('name')}
-                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
                 >
                     Name <SortIcon field="name" />
-                </button>,
-                <button
+                </Button>,
+                <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleSort('email')}
-                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
                 >
                     Email <SortIcon field="email" />
-                </button>,
-                <button
+                </Button>,
+                <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleSort('specialization')}
-                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
                 >
                     Specialization <SortIcon field="specialization" />
-                </button>,
+                </Button>,
                 'Actions'
             ]}>
                 {getSortedProfessors().map(professor => (
@@ -144,7 +157,7 @@ export const ProfessorsModule = ({ hideHeader = false }: ProfessorsModuleProps) 
                                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#3f3f46', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <UserCheck size={16} color="#fbbf24" />
                                 </div>
-                                <span style={{ fontWeight: 500, color: '#fff' }}>{professor.name}</span>
+                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{professor.name}</span>
                             </div>
                         </TableCell>
                         <TableCell>{professor.email}</TableCell>

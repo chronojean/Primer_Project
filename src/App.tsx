@@ -11,6 +11,7 @@ import { Payments } from './pages/Payments';
 import { Attendance } from './pages/Attendance';
 import { Schedule } from './pages/Schedule';
 import { ConfirmationProvider } from './context/ConfirmationContext';
+import { BackButtonProvider } from './context/BackButtonContext';
 
 const router = createBrowserRouter([
     {
@@ -36,7 +37,9 @@ const router = createBrowserRouter([
 function App() {
     return (
         <ConfirmationProvider>
-            <RouterProvider router={router} />
+            <BackButtonProvider>
+                <RouterProvider router={router} />
+            </BackButtonProvider>
         </ConfirmationProvider>
     );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { useConfirmation } from '../context/ConfirmationContext';
+import { useBackButton } from '../context/BackButtonContext';
 import { StorageService } from '../services/storage';
 import { Course, Section, Student, Attendance as AttendanceType } from '../types';
 import { Button } from '../components/ui/Button';
@@ -285,6 +286,24 @@ export const Attendance = () => {
         }
     };
 
+    useBackButton(async () => {
+        if (viewMode === 'dashboard') {
+            await handleNavigate(() => {
+                setSelectedSectionId('');
+                setViewMode('sections');
+            });
+            return true;
+        }
+        if (viewMode === 'sections') {
+            await handleNavigate(() => {
+                setSelectedCourseId('');
+                setViewMode('courses');
+            });
+            return true;
+        }
+        return false;
+    }, [viewMode, hasUnsavedChanges, selectedIds.length, selectedCourseId, selectedSectionId]);
+
     const renderBreadcrumbs = () => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
             <span
@@ -489,42 +508,22 @@ export const Attendance = () => {
             {/* Dashboard Header/Tabs */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem', backgroundColor: 'var(--bg-card)', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    <button
+                    <Button
                         onClick={() => setActiveTab('mark')}
-                        style={{
-                            padding: '0.6rem 1.25rem',
-                            borderRadius: '0.375rem',
-                            border: 'none',
-                            backgroundColor: activeTab === 'mark' ? 'var(--primary)' : 'transparent',
-                            color: activeTab === 'mark' ? 'white' : 'var(--text-secondary)',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            transition: 'all 0.2s'
-                        }}
+                        variant={activeTab === 'mark' ? 'primary' : 'secondary'}
+                        size="md"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
                         <UserCheck size={18} /> Mark Attendance
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => setActiveTab('history')}
-                        style={{
-                            padding: '0.6rem 1.25rem',
-                            borderRadius: '0.375rem',
-                            border: 'none',
-                            backgroundColor: activeTab === 'history' ? 'var(--primary)' : 'transparent',
-                            color: activeTab === 'history' ? 'white' : 'var(--text-secondary)',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            transition: 'all 0.2s'
-                        }}
+                        variant={activeTab === 'history' ? 'primary' : 'secondary'}
+                        size="md"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
                         <History size={18} /> History
-                    </button>
+                    </Button>
                 </div>
 
                 {activeTab === 'mark' && enrolledStudents.length > 0 && (
@@ -543,16 +542,16 @@ export const Attendance = () => {
                                 size="sm"
                                 variant="secondary"
                                 onClick={selectAll}
-                                style={{ fontWeight: 600, padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                                style={{ fontWeight: 600 }}
                             >
                                 Select All
                             </Button>
                             <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="secondary"
                                 onClick={() => setSelectedIds([])}
                                 disabled={selectedIds.length === 0}
-                                style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                                style={{ fontWeight: 600 }}
                             >
                                 Clear
                             </Button>
@@ -563,39 +562,19 @@ export const Attendance = () => {
                         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                             <Button
                                 size="sm"
+                                variant="success"
                                 onClick={() => markSelected(true)}
                                 disabled={selectedIds.length === 0}
-                                style={{
-                                    backgroundColor: '#10b981',
-                                    color: 'white',
-                                    border: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    fontWeight: 600,
-                                    padding: '0.4rem 0.8rem',
-                                    fontSize: '0.85rem',
-                                    opacity: selectedIds.length === 0 ? 0.6 : 1
-                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
                             >
                                 <CheckSquare size={14} /> Mark Selected Present
                             </Button>
                             <Button
                                 size="sm"
+                                variant="danger"
                                 onClick={() => markSelected(false)}
                                 disabled={selectedIds.length === 0}
-                                style={{
-                                    backgroundColor: '#ef4444',
-                                    color: 'white',
-                                    border: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    fontWeight: 600,
-                                    padding: '0.4rem 0.8rem',
-                                    fontSize: '0.85rem',
-                                    opacity: selectedIds.length === 0 ? 0.6 : 1
-                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
                             >
                                 <XSquare size={14} /> Mark Selected Absent
                             </Button>
@@ -696,6 +675,8 @@ export const Attendance = () => {
                                             onClick={() => toggleSelection(student.id)}
                                             role="button"
                                             tabIndex={0}
+                                            aria-pressed={isSelected}
+                                            aria-label={`${formatStudentName(student.name)} ${isPresent ? 'present' : 'absent'}${isSelected ? ', selected' : ''}`}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' || e.key === ' ') {
                                                     e.preventDefault();

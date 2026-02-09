@@ -13,6 +13,7 @@ interface ConfirmationContextType {
     showConfirmation: (options: ConfirmationOptions) => Promise<boolean>;
 }
 
+// CRITICAL: All user prompts must use this global modal. Do not use window.confirm/alert anywhere else.
 const ConfirmationContext = createContext<ConfirmationContextType | undefined>(undefined);
 
 export const ConfirmationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { useConfirmation } from '../context/ConfirmationContext';
+import { useBackButton } from '../context/BackButtonContext';
 import { StorageService } from '../services/storage';
 import { Course, Section, Enrollment, Attendance } from '../types';
 import { Button } from '../components/ui/Button';
@@ -91,6 +92,25 @@ export const Courses = () => {
         }
     };
 
+    useBackButton(async () => {
+        if (viewMode === 'sectionDetails') {
+            await handleNavigate(() => {
+                setSelectedSectionId('');
+                setViewMode('sections');
+            });
+            return true;
+        }
+        if (viewMode === 'sections') {
+            await handleNavigate(() => {
+                setSelectedCourseId('');
+                setSelectedSectionId('');
+                setViewMode('courses');
+            });
+            return true;
+        }
+        return false;
+    }, [viewMode, hasUnsavedChanges, selectedCourseId, selectedSectionId]);
+
     const loadData = () => {
         setCourses(StorageService.getCourses());
         setSections(StorageService.getSections());
@@ -130,12 +150,17 @@ export const Courses = () => {
         handleCloseModal();
     };
 
-    const handleDelete = (e: React.MouseEvent, id: string) => {
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (confirm('Are you sure you want to delete this course?')) {
-            StorageService.deleteCourse(id);
-            loadData();
-        }
+        const confirmed = await showConfirmation({
+            title: 'Delete Course?',
+            message: 'Are you sure you want to delete this course?',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        StorageService.deleteCourse(id);
+        loadData();
     };
 
     const getCourseSections = (courseId: string) => {

@@ -73,19 +73,19 @@ export const seedDatabase = () => {
 
     const sectionConfigs = [
         // Morning Block: Wed, Thu, Fri
-        { days: ['Wed', 'Thu', 'Fri'], start: '08:00', end: '09:30', nameSuffix: 'Morning 1' },
-        { days: ['Wed', 'Thu', 'Fri'], start: '09:45', end: '11:15', nameSuffix: 'Morning 2' },
-        { days: ['Wed', 'Thu', 'Fri'], start: '11:30', end: '13:00', nameSuffix: 'Morning 3' },
+        { days: ['Wed', 'Thu', 'Fri'], start: '08:00', end: '09:30', nameSuffix: 'Morning' },
+        { days: ['Wed', 'Thu', 'Fri'], start: '09:45', end: '11:15', nameSuffix: 'Morning' },
+        { days: ['Wed', 'Thu', 'Fri'], start: '11:30', end: '13:00', nameSuffix: 'Morning' },
 
         // Afternoon Block A: Mon, Wed, Fri
-        { days: ['Mon', 'Wed', 'Fri'], start: '14:00', end: '15:30', nameSuffix: 'Afternoon A1' },
-        { days: ['Mon', 'Wed', 'Fri'], start: '15:45', end: '17:15', nameSuffix: 'Afternoon A2' },
-        { days: ['Mon', 'Wed', 'Fri'], start: '17:30', end: '19:00', nameSuffix: 'Afternoon A3' },
+        { days: ['Mon', 'Wed', 'Fri'], start: '14:00', end: '15:30', nameSuffix: 'Afternoon' },
+        { days: ['Mon', 'Wed', 'Fri'], start: '15:45', end: '17:15', nameSuffix: 'Afternoon' },
+        { days: ['Mon', 'Wed', 'Fri'], start: '17:30', end: '19:00', nameSuffix: 'Afternoon' },
 
         // Afternoon Block B: Tue, Thu
-        { days: ['Tue', 'Thu'], start: '14:00', end: '15:30', nameSuffix: 'Afternoon B1' },
-        { days: ['Tue', 'Thu'], start: '15:45', end: '17:15', nameSuffix: 'Afternoon B2' },
-        { days: ['Tue', 'Thu'], start: '17:30', end: '19:00', nameSuffix: 'Afternoon B3' }
+        { days: ['Tue', 'Thu'], start: '14:00', end: '15:30', nameSuffix: 'Afternoon' },
+        { days: ['Tue', 'Thu'], start: '15:45', end: '17:15', nameSuffix: 'Afternoon' },
+        { days: ['Tue', 'Thu'], start: '17:30', end: '19:00', nameSuffix: 'Afternoon' }
     ];
 
     const sections: Section[] = [];
@@ -102,7 +102,7 @@ export const seedDatabase = () => {
             id: crypto.randomUUID(),
             courseId: course.id,
             professorId: teacher.id,
-            name: `${course.name} - ${config.nameSuffix}`,
+            name: config.nameSuffix,
             days: config.days,
             startTime: config.start,
             endTime: config.end,

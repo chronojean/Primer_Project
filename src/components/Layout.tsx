@@ -1,5 +1,8 @@
-import { Link, useLocation, Outlet } from 'react-router-dom';
-import { BookOpen, DollarSign, Home, Users, UserCheck, CheckSquare, Calendar } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { BookOpen, DollarSign, Home, Users, UserCheck, CheckSquare, Calendar, Sun, Moon } from 'lucide-react';
+import { Button } from './ui/Button';
+import { useBackButtonHandler } from '../context/BackButtonContext';
 
 const NavItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
     <Link
@@ -25,6 +28,62 @@ const NavItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, lab
 
 export const Layout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const backHandler = useBackButtonHandler();
+    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [hasUserPreference, setHasUserPreference] = useState(false);
+
+    const applyTheme = (nextTheme: 'light' | 'dark', persist: boolean) => {
+        setTheme(nextTheme);
+        document.documentElement.dataset.theme = nextTheme;
+        if (persist) {
+            localStorage.setItem('theme', nextTheme);
+            setHasUserPreference(true);
+        }
+    };
+
+    useEffect(() => {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light' || saved === 'dark') {
+            applyTheme(saved, false);
+            setHasUserPreference(true);
+            return;
+        }
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        applyTheme(media.matches ? 'dark' : 'light', false);
+        const handleChange = (e: MediaQueryListEvent) => {
+            if (!hasUserPreference) {
+                applyTheme(e.matches ? 'dark' : 'light', false);
+            }
+        };
+        media.addEventListener('change', handleChange);
+        return () => media.removeEventListener('change', handleChange);
+    }, [hasUserPreference]);
+
+    useEffect(() => {
+        const handleMouseUp = async (e: MouseEvent) => {
+            if (e.button !== 3) return;
+            const onDashboard = location.pathname === '/';
+
+            if (backHandler) {
+                e.preventDefault();
+                const handled = await backHandler();
+                if (handled) return;
+                if (!onDashboard) {
+                    navigate('/', { replace: true });
+                }
+                return;
+            }
+
+            if (!onDashboard) {
+                e.preventDefault();
+                navigate('/', { replace: true });
+            }
+        };
+
+        window.addEventListener('mouseup', handleMouseUp, { passive: false });
+        return () => window.removeEventListener('mouseup', handleMouseUp);
+    }, [backHandler, location.pathname, navigate]);
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)' }}>
@@ -75,9 +134,20 @@ export const Layout = () => {
                     boxShadow: 'var(--shadow-sm)'
                 }}>
                     <h3 style={{ margin: 0, color: 'var(--text-primary)', fontWeight: 600 }}>Overview</h3>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <button type="button" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>Help</button>
-                        <button type="button" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>Settings</button>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => applyTheme(theme === 'light' ? 'dark' : 'light', true)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+                        >
+                            {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+                            {theme === 'light' ? 'Dark' : 'Light'}
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm">Help</Button>
+                        <Button type="button" variant="ghost" size="sm">Settings</Button>
                     </div>
                 </header>
                 <div style={{ padding: '2.5rem', maxWidth: '1400px', margin: '0 auto' }}>

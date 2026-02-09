@@ -3,6 +3,7 @@ import { StorageService } from '../services/storage';
 import { seedDatabase, clearData } from '../services/seeder';
 import { BookOpen, Users, UserCheck, UserX, Database, Trash, TrendingUp } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useConfirmation } from '../context/ConfirmationContext';
 
 interface CourseAttendanceStats {
     courseId: string;
@@ -13,6 +14,7 @@ interface CourseAttendanceStats {
 }
 
 export const Dashboard = () => {
+    const { showConfirmation } = useConfirmation();
     const [stats, setStats] = useState({
         activeCourses: 0,
         totalStudents: 0,
@@ -102,23 +104,38 @@ export const Dashboard = () => {
         loadStats();
     }, []);
 
-    const handleClearData = () => {
-        if (confirm('Clear all data?')) {
-            clearData();
-            loadStats();
-        }
+    const handleClearData = async () => {
+        const confirmed = await showConfirmation({
+            title: 'Clear All Data?',
+            message: 'This will remove all stored data. Are you sure you want to continue?',
+            confirmLabel: 'Clear data',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        clearData();
+        loadStats();
     };
 
-    const handleLoadDemoData = () => {
-        if (confirm('Load dummy data? (This will add to existing data)')) {
-            try {
-                seedDatabase();
-                loadStats();
-                setTimeout(() => window.location.reload(), 500);
-            } catch (error: any) {
-                alert('Error loading demo data: ' + error.message);
-                console.error(error);
-            }
+    const handleLoadDemoData = async () => {
+        const confirmed = await showConfirmation({
+            title: 'Load Demo Data?',
+            message: 'This will add demo data to existing data. Do you want to continue?',
+            confirmLabel: 'Load demo data',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        try {
+            seedDatabase();
+            loadStats();
+            setTimeout(() => window.location.reload(), 500);
+        } catch (error: any) {
+            await showConfirmation({
+                title: 'Error Loading Demo Data',
+                message: `Error loading demo data: ${error.message}`,
+                confirmLabel: 'OK',
+                cancelLabel: 'Close'
+            });
+            console.error(error);
         }
     };
 
@@ -140,8 +157,8 @@ export const Dashboard = () => {
                 {/* Grouped Courses & Professors Stats Card */}
                 <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
-                        <div style={{ padding: '0.5rem', borderRadius: '0.5rem', backgroundColor: '#fef3c7' }}>
-                            <BookOpen size={24} color="#f59e0b" />
+                        <div style={{ padding: '0.5rem', borderRadius: '0.5rem', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-color)' }}>
+                            <BookOpen size={24} color="var(--text-primary)" />
                         </div>
                         <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Overview</h2>
                     </div>
@@ -161,8 +178,8 @@ export const Dashboard = () => {
                 {/* Grouped Student Stats Card */}
                 <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
-                        <div style={{ padding: '0.5rem', borderRadius: '0.5rem', backgroundColor: '#ecfdf5' }}>
-                            <Users size={24} color="#10b981" />
+                        <div style={{ padding: '0.5rem', borderRadius: '0.5rem', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-color)' }}>
+                            <Users size={24} color="var(--text-primary)" />
                         </div>
                         <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Students Overview</h2>
                     </div>
@@ -174,17 +191,17 @@ export const Dashboard = () => {
                         </div>
                         <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '1.5rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                <UserCheck size={16} color="#2563eb" />
+                                <UserCheck size={16} color="var(--text-primary)" />
                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Enrolled</span>
                             </div>
-                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, color: '#2563eb' }}>{stats.enrolledStudents}</p>
+                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>{stats.enrolledStudents}</p>
                         </div>
                         <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '1.5rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                <UserX size={16} color="#ef4444" />
+                                <UserX size={16} color="var(--text-primary)" />
                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Not Enrolled</span>
                             </div>
-                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, color: '#ef4444' }}>{stats.notEnrolledStudents}</p>
+                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>{stats.notEnrolledStudents}</p>
                         </div>
                     </div>
                 </div>

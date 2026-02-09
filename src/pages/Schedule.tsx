@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useBlocker } from 'react-router-dom';
+import { useConfirmation } from '../context/ConfirmationContext';
 import { StorageService } from '../services/storage';
 import { Section, Course } from '../types';
-import { MapPin } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const CLASS_MINUTES = 90;
@@ -13,12 +14,15 @@ const BLOCKED_TIMES = new Set(['13:15']);
 
 export const Schedule = () => {
     const [sections, setSections] = useState<Section[]>([]);
+    const [originalSections, setOriginalSections] = useState<Section[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [dragContext, setDragContext] = useState<{ sectionId: string, sourceDay: string, sourceTime: string } | null>(null);
     const [dragOverKey, setDragOverKey] = useState<string | null>(null);
     const location = useLocation();
     const [colorSeed, setColorSeed] = useState<number>(() => Date.now());
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const { showConfirmation } = useConfirmation();
 
     useEffect(() => {
         loadData();
@@ -28,8 +32,16 @@ export const Schedule = () => {
         setColorSeed(Date.now());
     }, [location.key]);
 
+    const cloneSections = (items: Section[]) => items.map(section => ({
+        ...section,
+        days: [...section.days],
+        scheduleBlocks: section.scheduleBlocks ? section.scheduleBlocks.map(b => ({ ...b })) : undefined
+    }));
+
     const loadData = () => {
-        setSections(StorageService.getSections());
+        const storedSections = StorageService.getSections();
+        setOriginalSections(cloneSections(storedSections));
+        setSections(cloneSections(storedSections));
         setCourses(StorageService.getCourses());
     };
 
@@ -231,6 +243,76 @@ export const Schedule = () => {
         });
     };
 
+    const normalizeSectionForCompare = (section: Section) => ({
+        id: section.id,
+        courseId: section.courseId,
+        professorId: section.professorId,
+        name: section.name,
+        days: [...section.days],
+        startTime: section.startTime,
+        endTime: section.endTime,
+        roomId: section.roomId,
+        color: section.color ?? null,
+        scheduleBlocks: section.scheduleBlocks && section.scheduleBlocks.length > 0
+            ? normalizeBlocks(section.scheduleBlocks)
+            : []
+    });
+
+    const areSectionsEqual = (a: Section[], b: Section[]) => {
+        if (a.length !== b.length) return false;
+        const sortedA = [...a].sort((x, y) => x.id.localeCompare(y.id));
+        const sortedB = [...b].sort((x, y) => x.id.localeCompare(y.id));
+        for (let i = 0; i < sortedA.length; i += 1) {
+            if (JSON.stringify(normalizeSectionForCompare(sortedA[i])) !== JSON.stringify(normalizeSectionForCompare(sortedB[i]))) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    useEffect(() => {
+        setHasUnsavedChanges(!areSectionsEqual(sections, originalSections));
+    }, [sections, originalSections]);
+
+    // Navigation Blocker (React Router)
+    const blocker = useBlocker(
+        ({ currentLocation, nextLocation }) =>
+            hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
+    );
+
+    useEffect(() => {
+        const handleBlock = async () => {
+            if (blocker.state === 'blocked') {
+                const confirmed = await showConfirmation({
+                    title: 'Leave Schedule?',
+                    message: 'You have unsaved schedule changes. Are you sure you want to leave?',
+                    confirmLabel: 'Leave anyway',
+                    cancelLabel: 'Stay here'
+                });
+
+                if (confirmed) {
+                    setHasUnsavedChanges(false);
+                    blocker.proceed();
+                } else {
+                    blocker.reset();
+                }
+            }
+        };
+        handleBlock();
+    }, [blocker, hasUnsavedChanges, showConfirmation]);
+
+    // Unsaved changes browser listener (Refresh/Close)
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [hasUnsavedChanges]);
+
     const getDaysFromBlocks = (blocks: { day: string, startTime: string }[]) => {
         const dayIndex = new Map(DAYS.map((d, i) => [d, i]));
         const uniqueDays = Array.from(new Set(blocks.map(b => b.day)));
@@ -241,6 +323,7 @@ export const Schedule = () => {
         e.dataTransfer.setData('sectionId', sectionId);
         e.dataTransfer.setData('sourceDay', sourceDay);
         e.dataTransfer.setData('sourceTime', sourceTime);
+        e.dataTransfer.setData('text/plain', JSON.stringify({ sectionId, sourceDay, sourceTime }));
         e.dataTransfer.effectAllowed = 'move';
         setDragContext({ sectionId, sourceDay, sourceTime });
 
@@ -267,15 +350,24 @@ export const Schedule = () => {
         const targetSection = getSectionAt(targetDay, targetTime);
         const draggedSection = sections.find(s => s.id === dragContext.sectionId);
         const sourceKey = draggedSection ? slotKey(dragContext.sourceDay, dragContext.sourceTime) : null;
-        if (draggedSection && draggedSection.days.includes(targetDay) && dragContext.sourceDay !== targetDay) {
-            setDragOverKey(null);
-            return;
+        if (draggedSection) {
+            const draggedBlocks = getSectionBlocks(draggedSection);
+            if (draggedBlocks.some(b => b.day === targetDay && b.startTime === targetTime)) {
+                setDragOverKey(null);
+                return;
+            }
         }
         if (!targetSection && targetKey !== sourceKey) {
             setDragOverKey(targetKey);
-        } else {
-            setDragOverKey(null);
+            return;
         }
+        if (targetSection && draggedSection && targetSection.id !== draggedSection.id) {
+            const targetBlocks = getSectionBlocks(targetSection);
+            const canSwap = !targetBlocks.some(b => b.day === dragContext.sourceDay && b.startTime === dragContext.sourceTime);
+            setDragOverKey(canSwap ? targetKey : null);
+            return;
+        }
+        setDragOverKey(null);
     };
 
     const handleDragLeave = () => {
@@ -290,9 +382,27 @@ export const Schedule = () => {
             setTimeout(() => setError(null), 3000);
             return;
         }
-        const sectionId = e.dataTransfer.getData('sectionId');
-        const sourceDay = e.dataTransfer.getData('sourceDay');
-        const sourceTime = e.dataTransfer.getData('sourceTime');
+        let sectionId = e.dataTransfer.getData('sectionId');
+        let sourceDay = e.dataTransfer.getData('sourceDay');
+        let sourceTime = e.dataTransfer.getData('sourceTime');
+        if (!sectionId || !sourceDay || !sourceTime) {
+            const fallback = e.dataTransfer.getData('text/plain');
+            if (fallback) {
+                try {
+                    const parsed = JSON.parse(fallback);
+                    sectionId = parsed.sectionId;
+                    sourceDay = parsed.sourceDay;
+                    sourceTime = parsed.sourceTime;
+                } catch {
+                    // no-op
+                }
+            }
+        }
+        if ((!sectionId || !sourceDay || !sourceTime) && dragContext) {
+            sectionId = dragContext.sectionId;
+            sourceDay = dragContext.sourceDay;
+            sourceTime = dragContext.sourceTime;
+        }
         if (!sectionId || !sourceDay || !sourceTime) return;
 
         const draggedSection = sections.find(s => s.id === sectionId);
@@ -304,8 +414,8 @@ export const Schedule = () => {
         const existingSection = getSectionAt(targetDay, targetTime);
 
         try {
-            if (draggedBlocks.some(b => b.day === targetDay) && sourceDay !== targetDay) {
-                throw new Error(`Section "${draggedSection.name}" already has a block on ${targetDay}`);
+            if (draggedBlocks.some(b => b.day === targetDay && b.startTime === targetTime)) {
+                return;
             }
 
             if (existingSection) {
@@ -315,8 +425,8 @@ export const Schedule = () => {
                 }
 
                 const existingBlocks = getSectionBlocks(existingSection);
-                if (existingBlocks.some(b => b.day === sourceDay)) {
-                    throw new Error(`Section "${existingSection.name}" already has a block on ${sourceDay}`);
+                if (existingBlocks.some(b => b.day === sourceDay && b.startTime === sourceTime)) {
+                    throw new Error(`Section "${existingSection.name}" already has a block on ${sourceDay} at ${sourceTime}`);
                 }
 
                 const newBlocksForExisting = existingBlocks.map(b =>
@@ -345,8 +455,14 @@ export const Schedule = () => {
                     days: getDaysFromBlocks(normalizedDragged)
                 };
 
-                StorageService.updateSection(updatedExisting, { ignoreIds: [draggedSection.id] });
-                StorageService.updateSection(updatedDragged, { ignoreIds: [existingSection.id] });
+                setSections(prev =>
+                    prev.map(s => {
+                        if (s.id === updatedExisting.id) return updatedExisting;
+                        if (s.id === updatedDragged.id) return updatedDragged;
+                        return s;
+                    })
+                );
+                setHasUnsavedChanges(true);
             } else {
                 const newBlocks = draggedBlocks.map((b, idx) =>
                     idx === sourceBlockIndex
@@ -359,10 +475,10 @@ export const Schedule = () => {
                     scheduleBlocks: normalized,
                     days: getDaysFromBlocks(normalized)
                 };
-                StorageService.updateSection(updatedSection);
+                setSections(prev => prev.map(s => (s.id === updatedSection.id ? updatedSection : s)));
+                setHasUnsavedChanges(true);
             }
             setError(null);
-            loadData();
         } catch (err: any) {
             setError(err.message);
             setTimeout(() => setError(null), 3000);
@@ -379,76 +495,83 @@ export const Schedule = () => {
 
     const timeSlots = getTimeSlots();
 
-    useEffect(() => {
-        if (timeSlots.length === 0) return;
-        const toMinutes = (time: string) => {
-            const [h, m] = time.split(':').map(Number);
-            return h * 60 + m;
-        };
-        const nearestSlot = (time: string) => {
-            const t = toMinutes(time);
-            const allowedSlots = timeSlots.filter(s => !BLOCKED_TIMES.has(s));
-            if (allowedSlots.length === 0) return time;
-            let best = allowedSlots[0];
-            let bestDiff = Math.abs(toMinutes(best) - t);
-            for (let i = 1; i < allowedSlots.length; i += 1) {
-                const diff = Math.abs(toMinutes(allowedSlots[i]) - t);
-                if (diff < bestDiff) {
-                    best = allowedSlots[i];
-                    bestDiff = diff;
-                }
-            }
-            return best;
-        };
+    const handleReset = () => {
+        setSections(cloneSections(originalSections));
+        setError(null);
+        setDragOverKey(null);
+        setDragContext(null);
+    };
 
-        let didChange = false;
-        sections.forEach(section => {
-            const blocks = getSectionBlocks(section);
-            const normalized = normalizeBlocks(blocks).map(b => {
-                if (!timeSlots.includes(b.startTime) || BLOCKED_TIMES.has(b.startTime)) {
-                    didChange = true;
-                    return { ...b, startTime: nearestSlot(b.startTime) };
-                }
-                return b;
-            });
-            if (didChange) {
-                const updated = {
-                    ...section,
-                    scheduleBlocks: normalized,
-                    days: getDaysFromBlocks(normalized)
-                };
-                StorageService.updateSection(updated);
-            }
+    const handleSave = async () => {
+        const confirmed = await showConfirmation({
+            title: 'Save Schedule Changes?',
+            message: 'This will update the schedule for all sections. Do you want to continue?',
+            confirmLabel: 'Save changes',
+            cancelLabel: 'Cancel'
         });
-        if (didChange) loadData();
-    }, [sections, timeSlots]);
+        if (!confirmed) return;
+        const originalMap = new Map(originalSections.map(s => [s.id, s]));
+        const changed = sections.filter(s => {
+            const original = originalMap.get(s.id);
+            if (!original) return true;
+            return JSON.stringify(normalizeSectionForCompare(s)) !== JSON.stringify(normalizeSectionForCompare(original));
+        });
+        if (changed.length === 0) return;
+        const changedIds = new Set(changed.map(s => s.id));
+        try {
+            changed.forEach(section => {
+                StorageService.updateSection(section, { ignoreIds: [...changedIds].filter(id => id !== section.id) });
+            });
+            setOriginalSections(cloneSections(sections));
+            setHasUnsavedChanges(false);
+            setError(null);
+        } catch (err: any) {
+            setError(err.message);
+            setTimeout(() => setError(null), 3000);
+        }
+    };
 
     return (
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', gap: '1rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>System Schedule</h1>
                     <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>Drag and drop sections to reorganize the academy routine.</p>
                 </div>
 
-                {error && (
-                    <div
-                        role="alert"
-                        aria-live="polite"
-                        style={{
-                        backgroundColor: '#fee2e2',
-                        color: '#b91c1c',
-                        padding: '0.75rem 1.25rem',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #fecaca',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                        animation: 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both'
-                    }}>
-                        {error}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        {hasUnsavedChanges && (
+                            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                Unsaved changes
+                            </div>
+                        )}
+                        <Button variant="secondary" onClick={handleReset} disabled={!hasUnsavedChanges}>
+                            Reset
+                        </Button>
+                        <Button onClick={handleSave} disabled={!hasUnsavedChanges}>
+                            Save changes
+                        </Button>
                     </div>
-                )}
+                    {error && (
+                        <div
+                            role="alert"
+                            aria-live="polite"
+                            style={{
+                            backgroundColor: '#fee2e2',
+                            color: '#b91c1c',
+                            padding: '0.75rem 1.25rem',
+                            borderRadius: '0.5rem',
+                            border: '1px solid #fecaca',
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                            animation: 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div style={{
@@ -516,7 +639,7 @@ export const Schedule = () => {
                             const section = getSectionAt(day, time);
                             const isEmptySlot = !section;
                             const isBlocked = BLOCKED_TIMES.has(time);
-                            const isDragHighlight = isEmptySlot && dragOverKey === slotKey(day, time);
+                            const isDragHighlight = dragOverKey === slotKey(day, time);
 
                             return (
                                 <div
@@ -524,18 +647,23 @@ export const Schedule = () => {
                                     style={{
                                         padding: '0.5rem',
                                         borderRight: day === 'Sun' ? 'none' : '1px solid var(--border-color)',
-                                        backgroundColor: 'transparent',
+                                        backgroundColor: isDragHighlight ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
                                         transition: 'background-color 0.2s',
                                         position: 'relative',
-                                        minWidth: 0
+                                        minWidth: 0,
+                                        boxShadow: isDragHighlight ? 'inset 0 0 0 2px rgba(59, 130, 246, 0.25)' : 'none'
                                     }}
-                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    onDragOver={(e) => handleDragOver(e, day, time)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, day, time)}
+                                    onMouseEnter={(e) => {
+                                        if (!isDragHighlight) e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isDragHighlight) e.currentTarget.style.backgroundColor = 'transparent';
+                                    }}
                                 >
                                     <div
-                                        onDragOver={(e) => handleDragOver(e, day, time)}
-                                        onDragLeave={handleDragLeave}
-                                        onDrop={(e) => handleDrop(e, day, time)}
                                         style={{
                                             height: '100%',
                                             borderRadius: '0.85rem',
@@ -545,21 +673,14 @@ export const Schedule = () => {
                                             alignItems: 'stretch',
                                             justifyContent: 'stretch',
                                             overflow: 'hidden',
-                                            backgroundColor: isBlocked ? 'rgba(185, 28, 28, 0.08)' : (isDragHighlight ? 'rgba(59, 130, 246, 0.12)' : 'transparent'),
-                                            boxShadow: isDragHighlight ? 'inset 0 0 0 2px rgba(59, 130, 246, 0.25)' : 'none',
-                                            transition: 'background-color 0.15s, box-shadow 0.15s'
+                                            backgroundColor: isBlocked ? 'rgba(185, 28, 28, 0.08)' : 'transparent',
+                                            transition: 'background-color 0.15s'
                                         }}
                                     >
                                         {section && !isBlocked ? (
                                             (() => {
                                                 const sectionColor = getSectionColor(section);
                                                 const textColor = getContrastText(sectionColor);
-                                                const badgeBg = textColor === '#ffffff'
-                                                    ? 'rgba(255,255,255,0.28)'
-                                                    : 'rgba(15,23,42,0.12)';
-                                                const badgeBorder = textColor === '#ffffff'
-                                                    ? 'rgba(255,255,255,0.35)'
-                                                    : 'rgba(15,23,42,0.2)';
                                                 return (
                                                 <div
                                                     draggable
@@ -595,19 +716,17 @@ export const Schedule = () => {
                                                         target.style.transform = 'scale(1)';
                                                     }}
                                                 >
-                                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', minWidth: 0 }}>
-                                                        <div style={{ fontSize: '0.8rem', fontWeight: 900, color: textColor, textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.2, wordBreak: 'break-word' }}>
-                                                            {getCourseName(section.courseId)}
-                                                        </div>
-                                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: textColor, backgroundColor: badgeBg, border: `1px solid ${badgeBorder}`, padding: '0.15rem 0.45rem', borderRadius: '999px' }}>
-                                                            {time}-{calculateEndTime(time)}
-                                                        </div>
+                                                    <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: textColor, lineHeight: 1.2, wordBreak: 'break-word' }}>
+                                                        {getCourseName(section.courseId)}
+                                                    </h3>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: textColor, lineHeight: 1.2, wordBreak: 'break-word' }}>
+                                                        {time} - {calculateEndTime(time)}
                                                     </div>
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: textColor, lineHeight: 1.25, wordBreak: 'break-word' }}>
+                                                    <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: textColor, lineHeight: 1.25, wordBreak: 'break-word' }}>
                                                         {section.name}
-                                                    </div>
-                                                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', color: textColor, opacity: 0.9 }}>
-                                                        <MapPin size={10} /> Room {section.roomId || 'N/A'}
+                                                    </h4>
+                                                    <div style={{ marginTop: 'auto', fontSize: '0.85rem', fontWeight: 700, color: textColor, lineHeight: 1.2, wordBreak: 'break-word' }}>
+                                                        Room {section.roomId || 'N/A'}
                                                     </div>
                                                 </div>
                                                 );

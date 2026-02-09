@@ -6,6 +6,7 @@ import { Modal } from './ui/Modal';
 import { Input, Select } from './ui/Input';
 import { Pencil, Trash2, Plus, ClipboardList, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
 import { PaymentsModule } from './PaymentsModule';
+import { useConfirmation } from '../context/ConfirmationContext';
 
 interface StudentsModuleProps {
     sectionId?: string;
@@ -14,6 +15,7 @@ interface StudentsModuleProps {
 }
 
 export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: StudentsModuleProps) => {
+    const { showConfirmation } = useConfirmation();
     // Data
     const [students, setStudents] = useState<Student[]>([]);
     const [sections, setSections] = useState<Section[]>([]);
@@ -116,11 +118,16 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
         handleCloseModal();
     };
 
-    const handleDelete = (id: string) => {
-        if (confirm('Are you sure you want to delete this student?')) {
-            StorageService.deleteStudent(id);
-            loadData();
-        }
+    const handleDelete = async (id: string) => {
+        const confirmed = await showConfirmation({
+            title: 'Delete Student?',
+            message: 'Are you sure you want to delete this student?',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        StorageService.deleteStudent(id);
+        loadData();
     };
 
     const calculateAge = (birthDate?: string) => {
@@ -249,22 +256,27 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
                                         transition: 'background-color 0.2s',
                                     }}
                                 >
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="ghost"
+                                        size="sm"
                                         aria-expanded={isExpanded}
+                                        aria-label={isExpanded ? 'Collapse student details' : 'Expand student details'}
                                         onClick={() => toggleStudentExpand(student.id)}
-                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', background: 'none', border: 'none', padding: 0 }}
+                                        style={{ padding: 0 }}
                                     >
                                         {isExpanded ? <ChevronDown size={20} color="#64748b" /> : <ChevronRight size={20} color="#94a3b8" />}
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                         type="button"
+                                        variant="ghost"
+                                        size="sm"
                                         aria-expanded={isExpanded}
                                         onClick={() => toggleStudentExpand(student.id)}
-                                        style={{ cursor: 'pointer', fontWeight: 500, color: 'var(--text-primary)', background: 'none', border: 'none', padding: 0, textAlign: 'left' }}
+                                        style={{ padding: 0, justifyContent: 'flex-start', color: 'var(--text-primary)' }}
                                     >
                                         {formatStudentName(student.name)}
-                                    </button>
+                                    </Button>
                                     <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{student.email}</div>
                                     <div style={{ fontSize: '0.875rem' }}>{calculateAge(student.birthDate)}</div>
                                     <div style={{ fontSize: '0.875rem' }}>{student.sex || '-'}</div>

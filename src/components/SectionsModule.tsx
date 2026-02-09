@@ -5,6 +5,7 @@ import { Button } from './ui/Button';
 import { Modal } from './ui/Modal';
 import { Input, Select } from './ui/Input';
 import { Trash2, Plus, Pencil, Users, User, ArrowRightLeft, UserCheck, ArrowLeft } from 'lucide-react';
+import { useConfirmation } from '../context/ConfirmationContext';
 
 interface SectionsModuleProps {
     courseId?: string;
@@ -13,6 +14,7 @@ interface SectionsModuleProps {
 }
 
 export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }: SectionsModuleProps) => {
+    const { showConfirmation } = useConfirmation();
     const [sections, setSections] = useState<Section[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
     const [professors, setProfessors] = useState<Professor[]>([]);
@@ -187,12 +189,17 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
         }
     };
 
-    const handleDelete = (e: React.MouseEvent, id: string) => {
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (confirm('Are you sure you want to delete this section?')) {
-            StorageService.deleteSection(id);
-            loadData();
-        }
+        const confirmed = await showConfirmation({
+            title: 'Delete Section?',
+            message: 'Are you sure you want to delete this section?',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        StorageService.deleteSection(id);
+        loadData();
     };
 
     const getStudentCount = (sectionId: string) => {
@@ -425,25 +432,20 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                     <div style={{ marginBottom: '1rem' }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#d4d4d8' }}>Days</label>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            {daysOfWeek.map(day => (
-                                <button
-                                    key={day.value}
-                                    type="button"
-                                    onClick={() => toggleDay(day.value)}
-                                    style={{
-                                        padding: '0.4rem 0.75rem',
-                                        borderRadius: '0.375rem',
-                                        border: '1px solid',
-                                        borderColor: formData.days.includes(day.value) ? '#646cff' : '#3f3f46',
-                                        backgroundColor: formData.days.includes(day.value) ? '#646cff' : 'transparent',
-                                        color: formData.days.includes(day.value) ? 'white' : '#a1a1aa',
-                                        cursor: 'pointer',
-                                        fontSize: '0.875rem'
-                                    }}
-                                >
-                                    {day.label}
-                                </button>
-                            ))}
+                            {daysOfWeek.map(day => {
+                                const isSelected = formData.days.includes(day.value);
+                                return (
+                                    <Button
+                                        key={day.value}
+                                        type="button"
+                                        size="sm"
+                                        variant={isSelected ? 'primary' : 'secondary'}
+                                        onClick={() => toggleDay(day.value)}
+                                    >
+                                        {day.label}
+                                    </Button>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -844,6 +846,7 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                         const attStats = getStudentAttendanceInSection(student.id, section.id);
                         const isSelected = selectedIds.includes(student.id);
                         const isPending = !!pendingTransfers[student.id];
+                        const formattedName = formatStudentName(student.name);
 
                         return (
                             <div
@@ -851,6 +854,8 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                 onClick={() => toggleSelection(student.id)}
                                 role="button"
                                 tabIndex={0}
+                                aria-pressed={isSelected}
+                                aria-label={`${formattedName}${isSelected ? ' selected' : ''}${isPending ? ' pending transfer' : ''}`}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
@@ -891,11 +896,11 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                         fontSize: '1.1rem',
                                         transition: 'all 0.2s'
                                     }}>
-                                        {formatStudentName(student.name).charAt(0)}
+                                        {formattedName.charAt(0)}
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ fontWeight: 600, color: isPending ? 'white' : 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1rem' }}>
-                                            {formatStudentName(student.name)}
+                                            {formattedName}
                                         </div>
                                         <div style={{ fontSize: '0.8rem', color: isPending ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)' }}>
                                             {calculateAge(student.birthDate)} yrs • {student.sex || 'N/A'}
@@ -985,33 +990,24 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {otherSections.map(s => (
-                                <button
+                                <Button
                                     key={s.id}
+                                    type="button"
+                                    variant="secondary"
+                                    size="md"
                                     onClick={() => handleTransferStudent(s.id)}
                                     style={{
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'flex-start',
                                         padding: '1rem',
-                                        backgroundColor: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '0.5rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s',
+                                        width: '100%',
                                         textAlign: 'left'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.borderColor = 'var(--primary)';
-                                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.borderColor = 'var(--border-color)';
-                                        e.currentTarget.style.backgroundColor = 'var(--bg-primary)';
                                     }}
                                 >
                                     <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</span>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.days?.join(', ')} • {s.startTime} - {s.endTime}</span>
-                                </button>
+                                </Button>
                             ))}
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
