@@ -223,8 +223,9 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
         let totalPresent = 0;
         let totalRecords = 0;
         sectionAttendance.forEach(a => {
-            totalRecords += a.records.length;
-            totalPresent += a.records.filter(r => r.present).length;
+            const activeRecords = a.records.filter(r => StorageService.getEffectiveStudentStatus(r.studentId, sectionId));
+            totalRecords += activeRecords.length;
+            totalPresent += activeRecords.filter(r => r.present).length;
         });
         const percentage = totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0;
         return { present: totalPresent, total: totalRecords, percentage };
@@ -240,16 +241,18 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
     return (
         <div>
             {!hideHeader && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div className="module-header" style={{ marginBottom: '2rem' }}>
                     <h1>Sections</h1>
-                    <Button onClick={() => handleOpenModal()}>
-                        <Plus size={16} style={{ marginRight: '0.5rem' }} /> Add Section
-                    </Button>
+                    <div className="module-actions">
+                        <Button onClick={() => handleOpenModal()}>
+                            <Plus size={16} style={{ marginRight: '0.5rem' }} /> Add Section
+                        </Button>
+                    </div>
                 </div>
             )}
 
             {courseId && hideHeader && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div className="module-header" style={{ marginBottom: '1.5rem' }}>
                     <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Manage Sections</h2>
                 </div>
             )}
@@ -543,6 +546,7 @@ interface SectionDetailProps {
 }
 
 export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDetailProps) => {
+    const { showConfirmation } = useConfirmation();
     const [section, setSection] = useState<Section | null>(null);
     const [attendance, setAttendance] = useState<Attendance[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
@@ -550,30 +554,23 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [pendingTransfers, setPendingTransfers] = useState<{ [studentId: string]: string }>({});
+    const [pendingStatusChanges, setPendingStatusChanges] = useState<{ [studentId: string]: boolean }>({});
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [transferringStudent, setTransferringStudent] = useState<{ student: Student; fromSection: Section } | null>(null);
     const [isBulkTransfer, setIsBulkTransfer] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
-    const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
-    const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-    const [studentForm, setStudentForm] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        birthDate: '',
-        sex: '' as 'Male' | 'Female' | 'Other' | ''
-    });
 
     useEffect(() => {
         loadData();
         setSelectedIds([]);
         setPendingTransfers({});
+        setPendingStatusChanges({});
         setStatusMessage('');
     }, [sectionId]);
 
     useEffect(() => {
-        onUnsavedChanges?.(Object.keys(pendingTransfers).length > 0);
-    }, [pendingTransfers, onUnsavedChanges]);
+        onUnsavedChanges?.(Object.keys(pendingTransfers).length > 0 || Object.keys(pendingStatusChanges).length > 0);
+    }, [pendingTransfers, pendingStatusChanges, onUnsavedChanges]);
 
     const loadData = () => {
         const sections = StorageService.getSections();
@@ -645,50 +642,26 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
         setIsTransferModalOpen(true);
     };
 
-    const handleOpenStudentModal = (student: Student) => {
-        setEditingStudent(student);
-        setStudentForm({
-            name: student.name,
-            email: student.email,
-            phone: student.phone,
-            birthDate: student.birthDate || '',
-            sex: (student.sex as 'Male' | 'Female' | 'Other' | '') || ''
-        });
-        setIsStudentModalOpen(true);
-    };
-
-    const handleCloseStudentModal = () => {
-        setIsStudentModalOpen(false);
-        setEditingStudent(null);
-        setStudentForm({ name: '', email: '', phone: '', birthDate: '', sex: '' });
-    };
-
-    const handleStudentSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editingStudent) return;
-        StorageService.updateStudent({
-            ...editingStudent,
-            name: studentForm.name,
-            email: studentForm.email,
-            phone: studentForm.phone,
-            birthDate: studentForm.birthDate || undefined,
-            sex: studentForm.sex || undefined
-        });
-        handleCloseStudentModal();
-        loadData();
-    };
 
     const handleOpenBulkTransferModal = () => {
         setIsBulkTransfer(true);
         setIsTransferModalOpen(true);
     };
 
-    const handleTransferStudent = (toSectionId: string) => {
+    const handleTransferStudent = async (toSectionId: string) => {
         const studentsToStage = isBulkTransfer
             ? enrolledStudents.filter(s => selectedIds.includes(s.id))
             : transferringStudent ? [transferringStudent.student] : [];
 
         if (studentsToStage.length === 0) return;
+
+        const confirmed = await showConfirmation({
+            title: 'Stage Transfer?',
+            message: `This will stage ${studentsToStage.length} transfer${studentsToStage.length === 1 ? '' : 's'}. You can review before saving.`,
+            confirmLabel: 'Stage transfer',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
 
         const newPending = { ...pendingTransfers };
         studentsToStage.forEach(student => {
@@ -702,6 +675,21 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
         setSelectedIds([]);
     };
 
+    const handleToggleSectionStatus = async (student: Student) => {
+        const current = Object.prototype.hasOwnProperty.call(pendingStatusChanges, student.id)
+            ? pendingStatusChanges[student.id]
+            : StorageService.getSectionStudentActiveStatus(student.id, section.id);
+        const next = !current;
+        const confirmed = await showConfirmation({
+            title: next ? 'Mark Student Active?' : 'Mark Student Inactive?',
+            message: `Are you sure you want to tag "${student.name}" as ${next ? 'active' : 'inactive'}?`,
+            confirmLabel: next ? 'Mark active' : 'Mark inactive',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        setPendingStatusChanges(prev => ({ ...prev, [student.id]: next }));
+    };
+
     const cancelTransfer = (studentId: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
         const newPending = { ...pendingTransfers };
@@ -709,9 +697,18 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
         setPendingTransfers(newPending);
     };
 
-    const handleSaveTransfers = () => {
+    const handleSaveTransfers = async () => {
         const studentIds = Object.keys(pendingTransfers);
-        if (studentIds.length === 0) return;
+        const statusIds = Object.keys(pendingStatusChanges);
+        if (studentIds.length === 0 && statusIds.length === 0) return;
+
+        const confirmed = await showConfirmation({
+            title: 'Save Changes?',
+            message: 'This will apply staged transfers and status changes. Do you want to continue?',
+            confirmLabel: 'Save changes',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
 
         const fromSection = section;
         const allEnrollments = StorageService.getEnrollments();
@@ -762,7 +759,19 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
 
         StorageService.saveData('academy_attendance', updatedAttendance);
 
+        statusIds.forEach(studentId => {
+            const isActive = pendingStatusChanges[studentId];
+            StorageService.addSectionStudentStatusHistory({
+                id: crypto.randomUUID(),
+                studentId,
+                sectionId: section.id,
+                isActive,
+                changedAt: new Date().toISOString()
+            });
+        });
+
         setPendingTransfers({});
+        setPendingStatusChanges({});
         setStatusMessage('Changes saved successfully!');
         setTimeout(() => setStatusMessage(''), 2000);
         loadData();
@@ -877,7 +886,7 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
 
                             <Button
                                 onClick={handleSaveTransfers}
-                                disabled={Object.keys(pendingTransfers).length === 0}
+                                disabled={Object.keys(pendingTransfers).length === 0 && Object.keys(pendingStatusChanges).length === 0}
                                 size="sm"
                                 style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
                                 <UserCheck size={16} /> Save Changes
@@ -896,11 +905,19 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                         const isSelected = selectedIds.includes(student.id);
                         const isPending = !!pendingTransfers[student.id];
                         const formattedName = formatStudentName(student.name);
+                        const sectionActive = Object.prototype.hasOwnProperty.call(pendingStatusChanges, student.id)
+                            ? pendingStatusChanges[student.id]
+                            : StorageService.getSectionStudentActiveStatus(student.id, section.id);
+                        const globalActive = StorageService.getStudentActiveStatus(student.id);
+                        const isInactive = !globalActive || !sectionActive;
 
                         return (
                             <div
                                 key={student.id}
-                                onClick={() => toggleSelection(student.id)}
+                                onClick={() => {
+                                    if (isInactive) return;
+                                    toggleSelection(student.id);
+                                }}
                                 role="button"
                                 tabIndex={0}
                                 aria-pressed={isSelected}
@@ -908,21 +925,24 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
-                                        toggleSelection(student.id);
+                                        if (!isInactive) toggleSelection(student.id);
                                     }
                                 }}
                                 style={{
-                                    backgroundColor: isPending ? '#1e3a8a' : (isSelected ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-card)'),
+                                    backgroundColor: isInactive
+                                        ? 'var(--bg-hover)'
+                                        : isPending ? '#1e3a8a' : (isSelected ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-card)'),
                                     borderRadius: '0.75rem',
                                     padding: '1.5rem',
                                     border: isPending ? '2px solid #312e81' : (isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)'),
                                     boxShadow: isPending ? '0 0 0 3px rgba(30, 58, 138, 0.2), var(--shadow-sm)' : (isSelected ? 'var(--shadow-md)' : 'var(--shadow-sm)'),
-                                    cursor: 'pointer',
+                                    cursor: isInactive ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                     position: 'relative',
                                     overflow: 'hidden',
                                     transform: isPending ? 'scale(1.02)' : 'none',
-                                    color: isPending ? 'white' : 'inherit'
+                                    color: isPending ? 'white' : 'inherit',
+                                    opacity: isInactive ? 0.6 : 1
                                 }}
                             >
                                 {(isSelected || isPending) && (
@@ -936,12 +956,12 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                         variant="ghost"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleOpenStudentModal(student);
+                                            handleToggleSectionStatus(student);
                                         }}
-                                        aria-label="Edit student"
+                                        aria-label={sectionActive ? 'Mark inactive' : 'Mark active'}
                                         style={{ padding: '0.35rem' }}
                                     >
-                                        <Pencil size={14} />
+                                        {sectionActive ? <Trash2 size={14} /> : <UserCheck size={14} />}
                                     </Button>
                                     {otherSections.length > 0 && !isPending && (
                                         <Button
@@ -952,6 +972,7 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                                 handleOpenTransferModal(student, section);
                                             }}
                                             aria-label="Transfer student"
+                                            disabled={isInactive}
                                             style={{ padding: '0.35rem' }}
                                         >
                                             <ArrowRightLeft size={14} />
@@ -979,6 +1000,11 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                         <div style={{ fontWeight: 600, color: isPending ? 'white' : 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1rem' }}>
                                             {formattedName}
                                         </div>
+                                        {isInactive && (
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: isPending ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                Inactive
+                                            </div>
+                                        )}
                                         <div style={{ fontSize: '0.8rem', color: isPending ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)' }}>
                                             {calculateAge(student.birthDate)} yrs • {student.sex || 'N/A'}
                                         </div>
@@ -1036,54 +1062,6 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                     })
                 )}
             </div>
-
-            <Modal
-                isOpen={isStudentModalOpen}
-                onClose={handleCloseStudentModal}
-                title="Edit Student"
-            >
-                <form onSubmit={handleStudentSubmit}>
-                    <Input
-                        label="Full Name"
-                        value={studentForm.name}
-                        onChange={e => setStudentForm({ ...studentForm, name: e.target.value })}
-                        required
-                    />
-                    <Input
-                        label="Email"
-                        type="email"
-                        value={studentForm.email}
-                        onChange={e => setStudentForm({ ...studentForm, email: e.target.value })}
-                        required
-                    />
-                    <Input
-                        label="Phone"
-                        value={studentForm.phone}
-                        onChange={e => setStudentForm({ ...studentForm, phone: e.target.value })}
-                    />
-                    <Input
-                        label="Birth Date"
-                        type="date"
-                        value={studentForm.birthDate}
-                        onChange={e => setStudentForm({ ...studentForm, birthDate: e.target.value })}
-                    />
-                    <Select
-                        label="Sex"
-                        value={studentForm.sex}
-                        onChange={e => setStudentForm({ ...studentForm, sex: e.target.value as 'Male' | 'Female' | 'Other' | '' })}
-                        options={[
-                            { value: '', label: 'Select' },
-                            { value: 'Male', label: 'Male' },
-                            { value: 'Female', label: 'Female' },
-                            { value: 'Other', label: 'Other' }
-                        ]}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
-                        <Button type="button" variant="secondary" onClick={handleCloseStudentModal}>Cancel</Button>
-                        <Button type="submit">Update</Button>
-                    </div>
-                </form>
-            </Modal>
 
             {/* Transfer Student Modal */}
             {isTransferModalOpen && (transferringStudent || isBulkTransfer) && (

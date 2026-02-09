@@ -70,6 +70,16 @@ export const Attendance = () => {
         }
     }, [selectedSectionId, selectedDate]);
 
+    const getActiveStudentIds = (sectionId: string) => {
+        return StorageService.getActiveStudentIdsForSection(sectionId);
+    };
+
+    const getActiveRecordStats = (record: AttendanceType, sectionId: string) => {
+        const activeRecords = record.records.filter(r => StorageService.getEffectiveStudentStatus(r.studentId, sectionId));
+        const present = activeRecords.filter(r => r.present).length;
+        return { present, total: activeRecords.length };
+    };
+
     const { showConfirmation } = useConfirmation();
 
     // Navigation Blocker (React Router)
@@ -231,8 +241,9 @@ export const Attendance = () => {
         }
     };
 
-    const presentCount = enrolledStudents.filter(s => attendanceRecords[s.id]).length;
-    const absentCount = enrolledStudents.length - presentCount;
+    const activeStudentIds = selectedSectionId ? getActiveStudentIds(selectedSectionId) : [];
+    const presentCount = enrolledStudents.filter(s => activeStudentIds.includes(s.id) && attendanceRecords[s.id]).length;
+    const absentCount = activeStudentIds.length - presentCount;
 
     const getHistory = () => {
         if (!selectedSectionId) return [];
@@ -450,7 +461,7 @@ export const Attendance = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{section.name.split(' - ')[1] || section.name}</h3>
                         <div style={{ padding: '0.25rem 0.6rem', backgroundColor: 'var(--bg-hover)', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }}>
-                            {StorageService.getEnrollments().filter(e => e.sectionId === section.id).length} Students
+                            {StorageService.getActiveStudentIdsForSection(section.id).length} Students
                         </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -752,8 +763,7 @@ export const Attendance = () => {
                     ) : (
                         <div>
                             {getHistory().map(record => {
-                                const present = record.records.filter(r => r.present).length;
-                                const total = record.records.length;
+                                const { present, total } = getActiveRecordStats(record, record.sectionId);
                                 return (
                                     <div key={record.id}
                                         onClick={() => handleEditHistory(record)}
@@ -784,7 +794,7 @@ export const Attendance = () => {
                                             <div>
                                                 <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{new Date(record.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                                                    {present} of {total} students present • {Math.round((present / total) * 100)}% Attendance
+                                                    {present} of {total} students present • {total > 0 ? Math.round((present / total) * 100) : 0}% Attendance
                                                 </div>
                                             </div>
                                         </div>
@@ -838,13 +848,12 @@ export const Attendance = () => {
                             {groupedByDate[date].map(record => {
                                 const section = sections.find(s => s.id === record.sectionId);
                                 const course = courses.find(c => c && section && c.id === section.courseId);
-                                const presentCount = record.records.filter(r => r.present).length;
-                                const totalCount = record.records.length;
+                                const { present: presentCount, total: totalCount } = getActiveRecordStats(record, record.sectionId);
                                 const percentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
                                 const isExpanded = expandedTimelineDate === record.id;
 
                                 const attendingStudents = record.records
-                                    .filter(r => r.present)
+                                    .filter(r => r.present && StorageService.getEffectiveStudentStatus(r.studentId, record.sectionId))
                                     .map(r => allStudents.find(s => s.id === r.studentId))
                                     .filter((s): s is Student => !!s)
                                     .sort((a, b) => formatStudentName(a.name).localeCompare(formatStudentName(b.name)));
@@ -988,7 +997,7 @@ export const Attendance = () => {
                                         const section = sections.find(s => s.id === record.sectionId);
                                         const course = courses.find(c => c && section && c.id === section.courseId);
                                         const isSectionExpanded = expandedSectionId === record.id;
-                                        const presentCount = record.records.filter(r => r.present).length;
+                                        const { present: presentCount } = getActiveRecordStats(record, record.sectionId);
 
                                         return (
                                             <div key={record.id}>
@@ -1022,10 +1031,10 @@ export const Attendance = () => {
                                                 {/* Level 3: Attendee Cards */}
                                                 {isSectionExpanded && (
                                                     <div style={{ padding: '1.5rem 1.5rem 1.5rem 5.5rem', backgroundColor: 'white', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }}>
-                                                        {record.records.filter(r => r.present).length === 0 ? (
+                                                        {getActiveRecordStats(record, record.sectionId).present === 0 ? (
                                                             <div style={{ gridColumn: '1 / -1', color: '#64748b', fontSize: '0.9rem', fontStyle: 'italic' }}>No attendees recorded.</div>
                                                         ) : (
-                                                            record.records.filter(r => r.present).map(r => {
+                                                            record.records.filter(r => r.present && StorageService.getEffectiveStudentStatus(r.studentId, record.sectionId)).map(r => {
                                                                 const student = allStudents.find(s => s.id === r.studentId);
                                                                 return (
                                                                     <div key={r.studentId} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
@@ -1055,8 +1064,8 @@ export const Attendance = () => {
     };
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div className="module" style={{ position: 'relative' }}>
+            <div className="module-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <h1 style={{ margin: 0, fontSize: '1.75rem' }}>Attendance</h1>
 

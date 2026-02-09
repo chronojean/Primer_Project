@@ -72,8 +72,9 @@ export const Dashboard = () => {
             courseSections.forEach(section => {
                 const sectionAttendance = attendance.filter(a => a.sectionId === section.id);
                 sectionAttendance.forEach(a => {
-                    totalRecords += a.records.length;
-                    totalPresent += a.records.filter(r => r.present).length;
+                    const activeRecords = a.records.filter(r => StorageService.getEffectiveStudentStatus(r.studentId, section.id));
+                    totalRecords += activeRecords.length;
+                    totalPresent += activeRecords.filter(r => r.present).length;
                 });
             });
 
@@ -140,10 +141,10 @@ export const Dashboard = () => {
     };
 
     return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div className="module">
+            <div className="module-header">
                 <h1 style={{ margin: 0 }}>Dashboard</h1>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="module-actions">
                     <Button variant="secondary" onClick={handleClearData}>
                         <Trash size={16} style={{ marginRight: '0.5rem' }} /> Clear Data
                     </Button>
@@ -153,10 +154,10 @@ export const Dashboard = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
                 {/* Grouped Courses & Professors Stats Card */}
-                <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                <div className="card">
+                    <div className="card-header">
                         <div style={{ padding: '0.5rem', borderRadius: '0.5rem', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-color)' }}>
                             <BookOpen size={24} color="var(--text-primary)" />
                         </div>
@@ -176,8 +177,8 @@ export const Dashboard = () => {
                 </div>
 
                 {/* Grouped Student Stats Card */}
-                <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                <div className="card">
+                    <div className="card-header">
                         <div style={{ padding: '0.5rem', borderRadius: '0.5rem', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-color)' }}>
                             <Users size={24} color="var(--text-primary)" />
                         </div>
@@ -209,13 +210,13 @@ export const Dashboard = () => {
 
             {/* Attendance by Course Section */}
             {courseAttendance.length > 0 && (
-                <div style={{ marginTop: '3rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                <div className="section">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <TrendingUp size={24} color="#10b981" />
                         <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>Course Attendance</h2>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+                    <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))' }}>
                         {courseAttendance.map(course => {
                             const getColor = (percentage: number) => {
                                 if (percentage >= 90) return '#10b981'; // Green
@@ -229,14 +230,8 @@ export const Dashboard = () => {
                             return (
                                 <div
                                     key={course.courseId}
-                                    style={{
-                                        backgroundColor: 'var(--bg-card)',
-                                        padding: '1.5rem',
-                                        borderRadius: '0.5rem',
-                                        border: '1px solid var(--border-color)',
-                                        boxShadow: 'var(--shadow-sm)',
-                                        transition: 'all 0.2s'
-                                    }}
+                                    className="card"
+                                    style={{ transition: 'all 0.2s' }}
                                     onMouseEnter={(e) => {
                                         e.currentTarget.style.transform = 'translateY(-2px)';
                                         e.currentTarget.style.boxShadow = 'var(--shadow-md)';

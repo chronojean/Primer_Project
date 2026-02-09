@@ -532,8 +532,8 @@ export const Schedule = () => {
     };
 
     return (
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', gap: '1rem' }}>
+        <div className="module">
+            <div className="module-header" style={{ gap: '1rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>System Schedule</h1>
                     <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>Drag and drop sections to reorganize the academy routine.</p>

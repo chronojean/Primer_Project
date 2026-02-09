@@ -107,11 +107,13 @@ export const PaymentsModule = ({ studentId, hideHeader = false }: PaymentsModule
     return (
         <div>
             {!hideHeader && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div className="module-header" style={{ marginBottom: '2rem' }}>
                     <h1>Payments</h1>
-                    <Button onClick={handleOpenModal}>
-                        <Plus size={16} style={{ marginRight: '0.5rem' }} /> Record Payment
-                    </Button>
+                    <div className="module-actions">
+                        <Button onClick={handleOpenModal}>
+                            <Plus size={16} style={{ marginRight: '0.5rem' }} /> Record Payment
+                        </Button>
+                    </div>
                 </div>
             )}
 

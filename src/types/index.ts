@@ -29,6 +29,21 @@ export interface Student {
     sex?: 'Male' | 'Female' | 'Other';
 }
 
+export interface StudentStatusHistory {
+    id: string;
+    studentId: string;
+    isActive: boolean;
+    changedAt: string; // ISO timestamp
+}
+
+export interface SectionStudentStatusHistory {
+    id: string;
+    studentId: string;
+    sectionId: string;
+    isActive: boolean;
+    changedAt: string; // ISO timestamp
+}
+
 export interface Professor {
     id: string;
     name: string;

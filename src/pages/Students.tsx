@@ -2,6 +2,8 @@ import { StudentsModule } from '../components/StudentsModule';
 
 export const Students = () => {
     return (
-        <StudentsModule />
+        <div className="module">
+            <StudentsModule />
+        </div>
     );
 };

@@ -118,15 +118,79 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
         handleCloseModal();
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDeactivateFromTrash = async (student: Student) => {
         const confirmed = await showConfirmation({
-            title: 'Delete Student?',
-            message: 'Are you sure you want to delete this student?',
-            confirmLabel: 'Delete',
+            title: 'Mark Student Inactive?',
+            message: `Are you sure you want to tag "${student.name}" as inactive?`,
+            confirmLabel: 'Mark inactive',
             cancelLabel: 'Cancel'
         });
         if (!confirmed) return;
-        StorageService.deleteStudent(id);
+        StorageService.addStudentStatusHistory({
+            id: crypto.randomUUID(),
+            studentId: student.id,
+            isActive: false,
+            changedAt: new Date().toISOString()
+        });
+        const enrollmentsForStudent = StorageService.getEnrollments().filter(e => e.studentId === student.id);
+        enrollmentsForStudent.forEach(e => {
+            StorageService.addSectionStudentStatusHistory({
+                id: crypto.randomUUID(),
+                studentId: student.id,
+                sectionId: e.sectionId,
+                isActive: false,
+                changedAt: new Date().toISOString()
+            });
+        });
+        loadData();
+    };
+
+    const handleToggleGlobalStatus = async (student: Student) => {
+        const isActive = StorageService.getStudentActiveStatus(student.id);
+        const confirmed = await showConfirmation({
+            title: isActive ? 'Mark Student Inactive?' : 'Mark Student Active?',
+            message: `Are you sure you want to ${isActive ? 'mark' : 'set'} "${student.name}" ${isActive ? 'inactive' : 'active'}?`,
+            confirmLabel: isActive ? 'Mark inactive' : 'Mark active',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        StorageService.addStudentStatusHistory({
+            id: crypto.randomUUID(),
+            studentId: student.id,
+            isActive: !isActive,
+            changedAt: new Date().toISOString()
+        });
+        if (isActive) {
+            const enrollmentsForStudent = StorageService.getEnrollments().filter(e => e.studentId === student.id);
+            enrollmentsForStudent.forEach(e => {
+                StorageService.addSectionStudentStatusHistory({
+                    id: crypto.randomUUID(),
+                    studentId: student.id,
+                    sectionId: e.sectionId,
+                    isActive: false,
+                    changedAt: new Date().toISOString()
+                });
+            });
+        }
+        loadData();
+    };
+
+    const handleToggleSectionStatus = async (student: Student, section: Section) => {
+        const isActive = StorageService.getSectionStudentActiveStatus(student.id, section.id);
+        const confirmed = await showConfirmation({
+            title: isActive ? 'Mark Student Inactive?' : 'Mark Student Active?',
+            message: `Are you sure you want to ${isActive ? 'mark' : 'set'} "${student.name}" ${isActive ? 'inactive' : 'active'} in "${section.name}"?`,
+            confirmLabel: isActive ? 'Mark inactive' : 'Mark active',
+            cancelLabel: 'Cancel'
+        });
+        if (!confirmed) return;
+        StorageService.addSectionStudentStatusHistory({
+            id: crypto.randomUUID(),
+            studentId: student.id,
+            sectionId: section.id,
+            isActive: !isActive,
+            changedAt: new Date().toISOString()
+        });
         loadData();
     };
 
@@ -150,6 +214,7 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
         let totalStudentRecords = 0;
 
         studentEnrollments.forEach(enrollment => {
+            if (!StorageService.getEffectiveStudentStatus(studentId, enrollment.sectionId)) return;
             const sectionRecords = attendanceData.filter(a => a.sectionId === enrollment.sectionId);
             sectionRecords.forEach(record => {
                 const studentRecord = record.records.find(r => r.studentId === studentId);
@@ -184,6 +249,9 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
         });
 
         const calcAttendance = (sectionId: string) => {
+            if (!StorageService.getEffectiveStudentStatus(studentId, sectionId)) {
+                return { percent: 0, present: 0, total: 0 };
+            }
             const sectionRecords = attendanceData.filter(a => a.sectionId === sectionId);
             const totalClasses = sectionRecords.length;
             if (totalClasses === 0) return { percent: 0, present: 0, total: 0 };
@@ -213,11 +281,13 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
     return (
         <div>
             {!hideHeader && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div className="module-header" style={{ marginBottom: '2rem' }}>
                     <h1>Students</h1>
-                    <Button onClick={() => handleOpenModal()}>
-                        <Plus size={16} style={{ marginRight: '0.5rem' }} /> Add Student
-                    </Button>
+                    <div className="module-actions">
+                        <Button onClick={() => handleOpenModal()}>
+                            <Plus size={16} style={{ marginRight: '0.5rem' }} /> Add Student
+                        </Button>
+                    </div>
                 </div>
             )}
 
@@ -242,6 +312,7 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
                     students.map(student => {
                         const attendanceStats = getStudentOverallAttendance(student.id);
                         const isExpanded = expandedStudentId === student.id;
+                        const globalActive = StorageService.getStudentActiveStatus(student.id);
 
                         return (
                             <React.Fragment key={student.id}>
@@ -254,6 +325,7 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
                                         backgroundColor: isExpanded ? '#f1f5f9' : 'transparent',
                                         alignItems: 'center',
                                         transition: 'background-color 0.2s',
+                                        opacity: globalActive ? 1 : 0.65
                                     }}
                                 >
                                     <Button
@@ -302,10 +374,20 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
                                         )}
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        {!globalActive && (
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={() => handleToggleGlobalStatus(student)}
+                                                aria-label="Mark student active"
+                                            >
+                                                Activate
+                                            </Button>
+                                        )}
                                         <Button size="sm" variant="secondary" onClick={() => handleOpenModal(student)} aria-label="Edit student">
                                             <Pencil size={14} />
                                         </Button>
-                                        <Button size="sm" variant="danger" onClick={() => handleDelete(student.id)} aria-label="Delete student">
+                                        <Button size="sm" variant="danger" onClick={() => handleDeactivateFromTrash(student)} aria-label="Mark student inactive">
                                             <Trash2 size={14} />
                                         </Button>
                                     </div>
@@ -323,12 +405,31 @@ export const StudentsModule = ({ sectionId, courseId, hideHeader = false }: Stud
                                                     const { activeSections, finishedSections, calcAttendance } = getStudentMetrics(student.id);
 
                                                     const SectionRow = ({ section, status }: { section: Section, status: string }) => {
+                                                        const globalActive = StorageService.getStudentActiveStatus(student.id);
+                                                        const sectionActive = StorageService.getSectionStudentActiveStatus(student.id, section.id);
+                                                        const effectiveActive = globalActive && sectionActive;
+                                                        const statusLabel = !globalActive
+                                                            ? 'Inactive (Global)'
+                                                            : !sectionActive
+                                                                ? 'Inactive'
+                                                                : status;
                                                         const stats = calcAttendance(section.id);
                                                         return (
                                                             <div style={{ backgroundColor: 'var(--bg-card)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', marginBottom: '0.75rem', boxShadow: 'var(--shadow-sm)' }}>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                                                     <div style={{ fontWeight: 600 }}>{section.name}</div>
-                                                                    <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', backgroundColor: status === 'Active' ? '#f0fdf4' : '#f8fafc', color: status === 'Active' ? '#16a34a' : '#64748b', border: '1px solid currentColor', opacity: 0.8 }}>{status}</span>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                        <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', backgroundColor: statusLabel === 'Active' ? '#f0fdf4' : '#f8fafc', color: statusLabel === 'Active' ? '#16a34a' : '#64748b', border: '1px solid currentColor', opacity: 0.8 }}>
+                                                                            {statusLabel}
+                                                                        </span>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant={effectiveActive ? 'danger' : 'secondary'}
+                                                                            onClick={() => handleToggleSectionStatus(student, section)}
+                                                                        >
+                                                                            {effectiveActive ? 'Deactivate' : 'Activate'}
+                                                                        </Button>
+                                                                    </div>
                                                                 </div>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                                     <div style={{ flex: 1, backgroundColor: '#e2e8f0', borderRadius: '0.25rem', height: '6px', overflow: 'hidden' }}>

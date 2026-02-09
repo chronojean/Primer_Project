@@ -180,8 +180,9 @@ export const Courses = () => {
         courseSections.forEach(section => {
             const sectionAttendance = attendance.filter(a => a.sectionId === section.id);
             sectionAttendance.forEach(a => {
-                totalRecords += a.records.length;
-                totalPresent += a.records.filter(r => r.present).length;
+                const activeRecords = a.records.filter(r => StorageService.getEffectiveStudentStatus(r.studentId, section.id));
+                totalRecords += activeRecords.length;
+                totalPresent += activeRecords.filter(r => r.present).length;
             });
         });
         const percentage = totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0;
@@ -419,37 +420,39 @@ export const Courses = () => {
     );
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h1>Courses</h1>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ position: 'relative', width: '300px' }}>
-                        <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                        <input
-                            type="text"
-                            placeholder="Search courses..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '0.6rem 1rem 0.6rem 2.75rem',
-                                backgroundColor: 'var(--bg-card)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '2rem',
-                                fontSize: '0.9rem',
-                                outline: 'none',
-                                boxShadow: 'var(--shadow-sm)'
-                            }}
-                        />
+        <>
+            <div className="module">
+                <div className="module-header">
+                    <h1>Courses</h1>
+                    <div className="module-actions">
+                        <div style={{ position: 'relative', width: '300px' }}>
+                            <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                            <input
+                                type="text"
+                                placeholder="Search courses..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.6rem 1rem 0.6rem 2.75rem',
+                                    backgroundColor: 'var(--bg-card)',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: '2rem',
+                                    fontSize: '0.9rem',
+                                    outline: 'none',
+                                    boxShadow: 'var(--shadow-sm)'
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
+
+                {renderBreadcrumbs()}
+
+                {viewMode === 'courses' && renderCourses()}
+                {viewMode === 'sections' && renderSections()}
+                {viewMode === 'sectionDetails' && renderSectionDetails()}
             </div>
-
-            {renderBreadcrumbs()}
-
-            {viewMode === 'courses' && renderCourses()}
-            {viewMode === 'sections' && renderSections()}
-            {viewMode === 'sectionDetails' && renderSectionDetails()}
 
             <Modal
                 isOpen={isModalOpen}
@@ -476,6 +479,6 @@ export const Courses = () => {
                     </div>
                 </form>
             </Modal>
-        </div>
+        </>
     );
 };

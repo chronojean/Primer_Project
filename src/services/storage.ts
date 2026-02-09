@@ -1,4 +1,4 @@
-import { Course, Section, Student, Professor, Enrollment, Attendance, Payment } from '../types';
+import { Course, Section, Student, Professor, Enrollment, Attendance, Payment, StudentStatusHistory, SectionStudentStatusHistory } from '../types';
 
 const STORAGE_KEYS = {
     COURSES: 'academy_courses',
@@ -8,6 +8,8 @@ const STORAGE_KEYS = {
     ENROLLMENTS: 'academy_enrollments',
     ATTENDANCE: 'academy_attendance',
     PAYMENTS: 'academy_payments',
+    STUDENT_STATUS_HISTORY: 'academy_student_status_history',
+    SECTION_STUDENT_STATUS_HISTORY: 'academy_section_student_status_history',
 };
 
 const initialCourses: Course[] = [
@@ -43,11 +45,11 @@ export const StorageService = {
             StorageService.saveData(STORAGE_KEYS.COURSES, initialCourses);
             StorageService.saveData(STORAGE_KEYS.PROFESSORS, initialProfessors);
             StorageService.saveData(STORAGE_KEYS.STUDENTS, initialStudents);
-            // Initialize others as empty
-            [STORAGE_KEYS.SECTIONS, STORAGE_KEYS.ENROLLMENTS, STORAGE_KEYS.ATTENDANCE, STORAGE_KEYS.PAYMENTS].forEach(key => {
-                if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify([]));
-            });
         }
+        // Ensure all collections exist
+        [STORAGE_KEYS.SECTIONS, STORAGE_KEYS.ENROLLMENTS, STORAGE_KEYS.ATTENDANCE, STORAGE_KEYS.PAYMENTS, STORAGE_KEYS.STUDENT_STATUS_HISTORY, STORAGE_KEYS.SECTION_STUDENT_STATUS_HISTORY].forEach(key => {
+            if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify([]));
+        });
     },
 
     // Courses
@@ -236,6 +238,45 @@ export const StorageService = {
         const students = StorageService.getStudents();
         const sectionEnrollments = enrollments.filter(e => e.sectionId === sectionId);
         return sectionEnrollments.map(e => students.find(s => s.id === e.studentId)).filter((s): s is Student => !!s);
+    },
+
+    // Student Status History (Global)
+    getStudentStatusHistory: () => StorageService.getData<StudentStatusHistory>(STORAGE_KEYS.STUDENT_STATUS_HISTORY),
+    addStudentStatusHistory: (event: StudentStatusHistory) => {
+        const history = StorageService.getStudentStatusHistory();
+        history.push(event);
+        StorageService.saveData(STORAGE_KEYS.STUDENT_STATUS_HISTORY, history);
+    },
+    getStudentActiveStatus: (studentId: string) => {
+        const history = StorageService.getStudentStatusHistory()
+            .filter(h => h.studentId === studentId)
+            .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+        if (history.length === 0) return true;
+        return history[0].isActive;
+    },
+
+    // Student Status History (Per Section)
+    getSectionStudentStatusHistory: () => StorageService.getData<SectionStudentStatusHistory>(STORAGE_KEYS.SECTION_STUDENT_STATUS_HISTORY),
+    addSectionStudentStatusHistory: (event: SectionStudentStatusHistory) => {
+        const history = StorageService.getSectionStudentStatusHistory();
+        history.push(event);
+        StorageService.saveData(STORAGE_KEYS.SECTION_STUDENT_STATUS_HISTORY, history);
+    },
+    getSectionStudentActiveStatus: (studentId: string, sectionId: string) => {
+        const history = StorageService.getSectionStudentStatusHistory()
+            .filter(h => h.studentId === studentId && h.sectionId === sectionId)
+            .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+        if (history.length === 0) return true;
+        return history[0].isActive;
+    },
+    getEffectiveStudentStatus: (studentId: string, sectionId: string) => {
+        return StorageService.getStudentActiveStatus(studentId) && StorageService.getSectionStudentActiveStatus(studentId, sectionId);
+    },
+    getActiveStudentIdsForSection: (sectionId: string) => {
+        const enrollments = StorageService.getEnrollments().filter(e => e.sectionId === sectionId);
+        return enrollments
+            .map(e => e.studentId)
+            .filter(studentId => StorageService.getEffectiveStudentStatus(studentId, sectionId));
     },
 
     // Attendance
