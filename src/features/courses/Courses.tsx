@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useLocation } from 'react-router-dom';
 import { useConfirmation } from '../../shared/hooks/useConfirmation';
-import { useBackButton } from '../../shared/hooks/useBackButton';
 import { StorageService } from '../../shared/utils/storage';
 import { Course, Section, Enrollment, Attendance } from '../../shared/utils/types';
 import { Button } from '../../shared/components/Button';
@@ -25,6 +24,7 @@ export const Courses = () => {
     const [selectedSectionId, setSelectedSectionId] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const location = useLocation();
 
     // Modals
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -87,31 +87,16 @@ export const Courses = () => {
 
             if (confirmed) {
                 setHasUnsavedChanges(false);
+                setSearchTerm('');
                 callback();
             }
         } else {
+            setSearchTerm('');
             callback();
         }
     };
 
-    useBackButton(async () => {
-        if (viewMode === 'sectionDetails') {
-            await handleNavigate(() => {
-                setSelectedSectionId('');
-                setViewMode('sections');
-            });
-            return true;
-        }
-        if (viewMode === 'sections') {
-            await handleNavigate(() => {
-                setSelectedCourseId('');
-                setSelectedSectionId('');
-                setViewMode('courses');
-            });
-            return true;
-        }
-        return false;
-    }, [viewMode, hasUnsavedChanges, selectedCourseId, selectedSectionId]);
+    // Removed custom mouse-back handling.
 
     const loadData = () => {
         setCourses(StorageService.getCourses());
@@ -131,6 +116,10 @@ export const Courses = () => {
         }
         setIsModalOpen(true);
     };
+
+    useEffect(() => {
+        setSearchTerm('');
+    }, [location.key]);
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
@@ -203,6 +192,19 @@ export const Courses = () => {
     );
 
     const currentCourse = courses.find(c => c.id === selectedCourseId);
+    const currentSection = sections.find(s => s.id === selectedSectionId);
+
+    const headerTitle = viewMode === 'sections'
+        ? (currentCourse?.name || 'Courses')
+        : viewMode === 'sectionDetails'
+            ? (currentSection?.name || 'Courses')
+            : 'Courses';
+
+    const searchPlaceholder = viewMode === 'sections'
+        ? 'Search sections...'
+        : viewMode === 'sectionDetails'
+            ? 'Search students...'
+            : 'Search courses...';
 
     const renderBreadcrumbs = () => {
         const currentSection = sections.find(s => s.id === selectedSectionId);
@@ -268,7 +270,7 @@ export const Courses = () => {
                 return (
                     <div
                         key={course.id}
-                        onClick={() => { setSelectedCourseId(course.id); setViewMode('sections'); }}
+                        onClick={() => { setSelectedCourseId(course.id); setViewMode('sections'); setSearchTerm(''); }}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
@@ -276,6 +278,7 @@ export const Courses = () => {
                                 e.preventDefault();
                                 setSelectedCourseId(course.id);
                                 setViewMode('sections');
+                                setSearchTerm('');
                             }
                         }}
                         className={styles.courseCard}
@@ -358,7 +361,9 @@ export const Courses = () => {
                 onSelectSection={(id) => {
                     setSelectedSectionId(id);
                     setViewMode('sectionDetails');
+                    setSearchTerm('');
                 }}
+                searchTerm={searchTerm}
             />
             <div className={styles.backButtonWrap}>
                 <Button variant="secondary" onClick={() => handleNavigate(() => { setSelectedCourseId(''); setViewMode('courses'); })}>
@@ -376,6 +381,7 @@ export const Courses = () => {
                 setViewMode('sections');
             })}
             onUnsavedChanges={setHasUnsavedChanges}
+            searchTerm={searchTerm}
         />
     );
 
@@ -384,15 +390,21 @@ export const Courses = () => {
             <div className="module" style={{ gap: 0 }}>
                 <PageHeader
                     compact={true}
-                    title="Courses"
+                    title={headerTitle}
                     actions={
                         <div className={styles.searchWrap}>
                             <Search size={18} className={styles.searchIcon} />
                             <input
                                 type="text"
-                                placeholder="Search courses..."
+                                placeholder={searchPlaceholder}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        setSearchTerm('');
+                                    }
+                                }}
                                 className={styles.searchInput}
                             />
                         </div>

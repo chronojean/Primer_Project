@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useLocation } from 'react-router-dom';
 import { useConfirmation } from '../../shared/hooks/useConfirmation';
-import { useBackButton } from '../../shared/hooks/useBackButton';
 import { StorageService } from '../../shared/utils/storage';
 import { Course, Section, Student, Attendance as AttendanceType } from '../../shared/utils/types';
 import { Button } from '../../shared/components/Button';
@@ -17,6 +16,7 @@ export const Attendance = () => {
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [selectedSectionId, setSelectedSectionId] = useState('');
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const location = useLocation();
 
     // View State
     const [mainTab, setMainTab] = useState<'hierarchy' | 'timeline' | 'drilldown'>('hierarchy');
@@ -43,12 +43,19 @@ export const Attendance = () => {
     }, []);
 
     useEffect(() => {
+        setSearchTerm('');
+    }, [location.key]);
+
+    useEffect(() => {
         // Reset section when course changes
         setSelectedSectionId('');
         if (selectedCourseId) {
             setViewMode('sections');
         } else {
             setViewMode('courses');
+        }
+        if (selectedCourseId) {
+            setSearchTerm('');
         }
     }, [selectedCourseId]);
 
@@ -57,6 +64,7 @@ export const Attendance = () => {
             setViewMode('dashboard');
             setMainTab('hierarchy'); // Ensure we switch to marking view when a section is selected
             loadAttendanceData();
+            setSearchTerm('');
         }
     }, [selectedSectionId]);
 
@@ -234,13 +242,6 @@ export const Attendance = () => {
         setTimeout(() => setStatusMessage(''), 2000);
     };
 
-    const selectAll = () => {
-        if (selectedIds.length === enrolledStudents.length) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(enrolledStudents.map(s => s.id));
-        }
-    };
 
     const activeStudentIds = selectedSectionId ? getActiveStudentIds(selectedSectionId) : [];
     const presentCount = enrolledStudents.filter(s => activeStudentIds.includes(s.id) && attendanceRecords[s.id]).length;
@@ -261,7 +262,7 @@ export const Attendance = () => {
     const currentCourse = courses.find(c => c.id === selectedCourseId);
     const currentSection = sections.find(s => s.id === selectedSectionId);
 
-    // Filter courses/sections based on search
+    // Filter courses/sections/students based on search
     const filteredCourses = courses.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -269,6 +270,18 @@ export const Attendance = () => {
         s.courseId === selectedCourseId &&
         s.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const filteredEnrolledStudents = searchTerm.trim()
+        ? enrolledStudents.filter(s => formatStudentName(s.name).toLowerCase().includes(searchTerm.toLowerCase()))
+        : enrolledStudents;
+
+    const selectAll = () => {
+        const targetStudents = filteredEnrolledStudents;
+        if (selectedIds.length === targetStudents.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(targetStudents.map(s => s.id));
+        }
+    };
 
     const handleNavigate = async (callback: () => void) => {
         if (hasUnsavedChanges || selectedIds.length > 0) {
@@ -291,30 +304,16 @@ export const Attendance = () => {
             if (confirmed) {
                 setHasUnsavedChanges(false);
                 setSelectedIds([]);
+                setSearchTerm('');
                 callback();
             }
         } else {
+            setSearchTerm('');
             callback();
         }
     };
 
-    useBackButton(async () => {
-        if (viewMode === 'dashboard') {
-            await handleNavigate(() => {
-                setSelectedSectionId('');
-                setViewMode('sections');
-            });
-            return true;
-        }
-        if (viewMode === 'sections') {
-            await handleNavigate(() => {
-                setSelectedCourseId('');
-                setViewMode('courses');
-            });
-            return true;
-        }
-        return false;
-    }, [viewMode, hasUnsavedChanges, selectedIds.length, selectedCourseId, selectedSectionId]);
+    // Removed custom mouse-back handling.
 
     const renderBreadcrumbs = () => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
@@ -676,7 +675,11 @@ export const Attendance = () => {
                                     backgroundColor: '#fafafa'
                                 }}
                             >
-                                {enrolledStudents.map(student => {
+                                {filteredEnrolledStudents.length === 0 ? (
+                                    <div style={{ width: '100%', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                        No students match your search.
+                                    </div>
+                                ) : filteredEnrolledStudents.map(student => {
                                     const isPresent = !!attendanceRecords[student.id];
                                     const isSelected = selectedIds.includes(student.id);
 
@@ -819,14 +822,37 @@ export const Attendance = () => {
             groupedByDate[record.date].push(record);
         });
 
-        const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
+        const recordMatchesSearch = (record: AttendanceType) => {
+            const q = searchTerm.trim().toLowerCase();
+            if (!q) return true;
+            const section = sections.find(s => s.id === record.sectionId);
+            const course = courses.find(c => c && section && c.id === section.courseId);
+            if (section?.name.toLowerCase().includes(q)) return true;
+            if (course?.name.toLowerCase().includes(q)) return true;
+            return record.records.some(r => {
+                const student = allStudents.find(s => s.id === r.studentId);
+                return student ? formatStudentName(student.name).toLowerCase().includes(q) : false;
+            });
+        };
+
+        const filteredGroupedByDate: { [date: string]: AttendanceType[] } = {};
+        Object.keys(groupedByDate).forEach(date => {
+            const records = groupedByDate[date].filter(recordMatchesSearch);
+            if (records.length > 0) filteredGroupedByDate[date] = records;
+        });
+
+        const sortedDates = Object.keys(filteredGroupedByDate).sort((a, b) => b.localeCompare(a));
 
         if (sortedDates.length === 0) {
             return (
                 <div style={{ backgroundColor: 'var(--bg-card)', padding: '4rem', textAlign: 'center', borderRadius: '0.75rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
                     <History size={64} style={{ marginBottom: '1.5rem', opacity: 0.1 }} />
-                    <h3 style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>No Timeline History</h3>
-                    <p style={{ margin: 0 }}>Start marking attendance to see your chronology here.</p>
+                    <h3 style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>
+                        {searchTerm.trim() ? 'No Matching Records' : 'No Timeline History'}
+                    </h3>
+                    <p style={{ margin: 0 }}>
+                        {searchTerm.trim() ? 'Try a different search term.' : 'Start marking attendance to see your chronology here.'}
+                    </p>
                 </div>
             );
         }
@@ -846,7 +872,7 @@ export const Attendance = () => {
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.25rem' }}>
-                            {groupedByDate[date].map(record => {
+                            {filteredGroupedByDate[date].map(record => {
                                 const section = sections.find(s => s.id === record.sectionId);
                                 const course = courses.find(c => c && section && c.id === section.courseId);
                                 const { present: presentCount, total: totalCount } = getActiveRecordStats(record, record.sectionId);
@@ -944,14 +970,37 @@ export const Attendance = () => {
             groupedByDate[record.date].push(record);
         });
 
-        const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
+        const recordMatchesSearch = (record: AttendanceType) => {
+            const q = searchTerm.trim().toLowerCase();
+            if (!q) return true;
+            const section = sections.find(s => s.id === record.sectionId);
+            const course = courses.find(c => c && section && c.id === section.courseId);
+            if (section?.name.toLowerCase().includes(q)) return true;
+            if (course?.name.toLowerCase().includes(q)) return true;
+            return record.records.some(r => {
+                const student = allStudents.find(s => s.id === r.studentId);
+                return student ? formatStudentName(student.name).toLowerCase().includes(q) : false;
+            });
+        };
+
+        const filteredGroupedByDate: { [date: string]: AttendanceType[] } = {};
+        Object.keys(groupedByDate).forEach(date => {
+            const records = groupedByDate[date].filter(recordMatchesSearch);
+            if (records.length > 0) filteredGroupedByDate[date] = records;
+        });
+
+        const sortedDates = Object.keys(filteredGroupedByDate).sort((a, b) => b.localeCompare(a));
 
         if (sortedDates.length === 0) {
             return (
                 <div style={{ backgroundColor: 'var(--bg-card)', padding: '4rem', textAlign: 'center', borderRadius: '0.75rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
                     <LayoutGrid size={64} style={{ marginBottom: '1.5rem', opacity: 0.1 }} />
-                    <h3 style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>No Records for Drilldown</h3>
-                    <p style={{ margin: 0 }}>Attendance data will appear here once saved.</p>
+                    <h3 style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>
+                        {searchTerm.trim() ? 'No Matching Records' : 'No Records for Drilldown'}
+                    </h3>
+                    <p style={{ margin: 0 }}>
+                        {searchTerm.trim() ? 'Try a different search term.' : 'Attendance data will appear here once saved.'}
+                    </p>
                 </div>
             );
         }
@@ -960,7 +1009,7 @@ export const Attendance = () => {
             <div style={{ borderRadius: '0.75rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
                 {sortedDates.map((date, idx) => {
                     const isDateExpanded = expandedDrilldownDate === date;
-                    const dailyRecords = groupedByDate[date];
+                    const dailyRecords = filteredGroupedByDate[date];
 
                     return (
                         <div key={date} style={{ borderBottom: idx === sortedDates.length - 1 ? 'none' : '1px solid var(--border-color)' }}>
@@ -1074,9 +1123,21 @@ export const Attendance = () => {
                         <Search size={18} style={{ position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                         <input
                             type="text"
-                            placeholder={mainTab === 'hierarchy' ? `Search ${viewMode}...` : "Search records..."}
+                            placeholder={
+                                mainTab === 'hierarchy'
+                                    ? viewMode === 'dashboard'
+                                        ? 'Search students...'
+                                        : `Search ${viewMode}...`
+                                    : 'Search records...'
+                            }
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    setSearchTerm('');
+                                }
+                            }}
                             style={{ width: '100%', padding: '0.75rem 1.25rem 0.75rem 3.25rem', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '2rem', fontSize: '0.9rem', outline: 'none', boxShadow: 'var(--shadow-sm)', transition: 'border-color 0.2s' }}
                         />
                     </div>

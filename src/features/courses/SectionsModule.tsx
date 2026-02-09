@@ -12,9 +12,10 @@ interface SectionsModuleProps {
     courseId?: string;
     hideHeader?: boolean;
     onSelectSection?: (sectionId: string) => void;
+    searchTerm?: string;
 }
 
-export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }: SectionsModuleProps) => {
+export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, searchTerm = '' }: SectionsModuleProps) => {
     const { showConfirmation } = useConfirmation();
     const [sections, setSections] = useState<Section[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
@@ -238,6 +239,10 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
     };
 
     const studentsForEnrollment = StorageService.getStudents();
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const displaySections = normalizedSearch
+        ? sections.filter(s => s.name.toLowerCase().includes(normalizedSearch))
+        : sections;
 
     return (
         <div>
@@ -259,12 +264,12 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                {sections.length === 0 ? (
+                {displaySections.length === 0 ? (
                     <div style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '0.75rem' }}>
-                        No sections found.
+                        {sections.length === 0 ? 'No sections found.' : 'No sections match your search.'}
                     </div>
                 ) : (
-                    sections.map(section => {
+                    displaySections.map(section => {
                         const attStats = getSectionAttendanceStats(section.id);
                         const studentCount = getStudentCount(section.id);
                         const profName = getProfessorName(section.professorId);
@@ -544,9 +549,10 @@ interface SectionDetailProps {
     sectionId: string;
     onBack?: () => void;
     onUnsavedChanges?: (hasUnsaved: boolean) => void;
+    searchTerm?: string;
 }
 
-export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDetailProps) => {
+export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm = '' }: SectionDetailProps) => {
     const { showConfirmation } = useConfirmation();
     const [section, setSection] = useState<Section | null>(null);
     const [attendance, setAttendance] = useState<Attendance[]>([]);
@@ -795,92 +801,91 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
     };
 
     const enrolledStudents = getSectionStudents(section.id);
+    const filteredStudents = searchTerm.trim()
+        ? enrolledStudents.filter(s => {
+            const name = formatStudentName(s.name).toLowerCase();
+            return name.includes(searchTerm.toLowerCase());
+        })
+        : enrolledStudents;
     const otherSections = getOtherSectionsForCourse(section.courseId, section.id);
 
     return (
         <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {onBack && (
-                        <Button variant="secondary" size="sm" onClick={onBack} style={{ padding: '0.5rem' }}>
-                            <ArrowLeft size={16} />
-                        </Button>
-                    )}
-                    <div>
-                        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>{section.name}</h2>
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{courses.find(c => c.id === section.courseId)?.name}</span>
-                    </div>
-                </div>
-                <div style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--bg-card)', borderRadius: '0.75rem', border: '1px solid var(--border-color)', display: 'flex', gap: '1.5rem', fontSize: '0.9rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Users size={16} color="var(--primary)" />
-                        <span style={{ fontWeight: 600 }}>{enrolledStudents.length} Students</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <UserCheck size={16} color="#10b981" />
-                        <span style={{ fontWeight: 600 }}>Active</span>
-                    </div>
-                </div>
+            <div className={styles.sectionHeader}>
+                <div className={styles.sectionHeaderActions} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 {enrolledStudents.length > 0 && (
-                    <div style={{
-                        gridColumn: '1 / -1',
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        alignItems: 'center',
-                        padding: '1rem 1.5rem',
-                        backgroundColor: 'var(--bg-card)',
-                        borderRadius: '0.75rem',
-                        border: '1px solid var(--border-color)',
-                        boxShadow: 'var(--shadow-sm)',
-                        marginBottom: '0.5rem',
-                        gap: '1.25rem',
-                        flexWrap: 'wrap'
-                    }}>
+                    <div className={styles.sectionToolbar}>
+                        <div className={styles.sectionToolbarLeft}>
+                            {onBack && (
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={onBack}
+                                    className={styles.backButton}
+                                    aria-label="Return to sections"
+                                >
+                                    <ArrowLeft size={16} />
+                                </Button>
+                            )}
+                            <div className={styles.sectionToolbarCounter}>
+                                <Users size={16} className={styles.sectionHeaderStatIcon} />
+                                <span className={styles.sectionHeaderStatText}>{enrolledStudents.length} Students</span>
+                            </div>
+                            <div className={styles.sectionToolbarCounter}>
+                                <UserCheck size={16} className={styles.sectionHeaderStatIconActive} />
+                                <span className={styles.sectionHeaderStatText}>Active</span>
+                            </div>
+                        </div>
+
                         {/* Status Message */}
                         {statusMessage && (
-                            <div style={{ marginRight: 'auto' }}>
-                                <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <div className={styles.statusMessage}>
+                                <span className={styles.statusMessageText}>
                                     <UserCheck size={16} /> {statusMessage}
                                 </span>
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            {selectedIds.length > 0 && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.75rem', borderRight: '1px solid var(--border-color)' }}>
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)', animation: 'pulse 2s infinite' }}></div>
-                                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)' }}>
-                                        {selectedIds.length} Selected
-                                    </span>
-                                </div>
-                            )}
+                        <div className={styles.bulkActions}>
+                            <div className={styles.selectionControls}>
+                                {selectedIds.length > 0 && (
+                                    <div className={styles.selectedBadge}>
+                                        <div className={styles.selectedDot}></div>
+                                        <span className={styles.selectedText}>
+                                            {selectedIds.length} Selected
+                                        </span>
+                                    </div>
+                                )}
 
-                            <Button size="sm" variant="secondary" onClick={selectAll} style={{ fontWeight: 600 }}>
-                                Select All
-                            </Button>
+                                <Button size="sm" variant="secondary" onClick={selectAll} className={styles.actionButton}>
+                                    Select All
+                                </Button>
 
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setSelectedIds([])}
-                                disabled={selectedIds.length === 0}
-                                style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}
-                            >
-                                Clear
-                            </Button>
-                        </div>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                        setSelectedIds([]);
+                                        setPendingTransfers({});
+                                        setPendingStatusChanges({});
+                                        setStatusMessage('');
+                                    }}
+                                    disabled={Object.keys(pendingTransfers).length === 0 && Object.keys(pendingStatusChanges).length === 0 && selectedIds.length === 0}
+                                    className={styles.clearButton}
+                                >
+                                    Reset
+                                </Button>
+                            </div>
 
-                        <div style={{ height: '24px', width: '1px', backgroundColor: 'var(--border-color)', margin: '0 0.25rem' }}></div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div className={styles.sectionToolbarDivider}></div>
                             <Button
                                 size="sm"
                                 onClick={handleOpenBulkTransferModal}
                                 disabled={selectedIds.length === 0}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
+                                className={styles.bulkButton}
                             >
                                 <ArrowRightLeft size={16} /> Bulk Transfer
                             </Button>
@@ -889,19 +894,20 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                 onClick={handleSaveTransfers}
                                 disabled={Object.keys(pendingTransfers).length === 0 && Object.keys(pendingStatusChanges).length === 0}
                                 size="sm"
-                                style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+                                className={styles.saveButton}
+                            >
                                 <UserCheck size={16} /> Save Changes
                             </Button>
                         </div>
                     </div>
                 )}
 
-                {enrolledStudents.length === 0 ? (
+                {filteredStudents.length === 0 ? (
                     <div style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '0.75rem' }}>
-                        No students enrolled in this section.
+                        No students found in this section.
                     </div>
                 ) : (
-                    enrolledStudents.map(student => {
+                    filteredStudents.map(student => {
                         const attStats = getStudentAttendanceInSection(student.id, section.id);
                         const isSelected = selectedIds.includes(student.id);
                         const isPending = !!pendingTransfers[student.id];

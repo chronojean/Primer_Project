@@ -1,0 +1,154 @@
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+
+.sectionHeaderActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.backButton {
+    padding: 0.5rem;
+}
+
+.sectionHeaderStats {
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-card);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.sectionHeaderStatItem {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.sectionHeaderStatIcon {
+    color: var(--primary);
+}
+
+.sectionHeaderStatIconActive {
+    color: #10b981;
+}
+
+.sectionHeaderStatText {
+    font-weight: 600;
+}
+
+.sectionToolbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background-color: var(--bg-card);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 0.5rem;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.sectionToolbarLeft {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+
+.sectionToolbarCounter {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.statusMessage {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+}
+
+.statusMessageText {
+    color: #10b981;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.selectionControls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.selectedBadge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.75rem;
+    border-right: 1px solid var(--border-color);
+}
+
+.selectedDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    animation: pulse 2s infinite;
+}
+
+.selectedText {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.actionButton {
+    font-weight: 600;
+}
+
+.clearButton {
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.sectionToolbarDivider {
+    height: 24px;
+    width: 1px;
+    background-color: var(--border-color);
+    margin: 0 0.25rem;
+}
+
+.bulkActions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+.bulkButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.saveButton {
+    padding: 0.6rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}

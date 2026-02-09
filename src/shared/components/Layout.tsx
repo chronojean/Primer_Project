@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { BookOpen, DollarSign, Home, Users, UserCheck, CheckSquare, Calendar, Sun, Moon } from 'lucide-react';
 import { Button } from './Button';
-import { useBackButtonHandler } from '../hooks/useBackButton';
 
 const NavItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
     <Link
@@ -19,8 +18,6 @@ const NavItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, lab
 
 export const Layout = () => {
     const location = useLocation();
-    const navigate = useNavigate();
-    const backHandler = useBackButtonHandler();
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
     const [hasUserPreference, setHasUserPreference] = useState(false);
 
@@ -52,29 +49,8 @@ export const Layout = () => {
     }, [hasUserPreference]);
 
     useEffect(() => {
-        const handleMouseUp = async (e: MouseEvent) => {
-            if (e.button !== 3) return;
-            const onDashboard = location.pathname === '/';
-
-            if (backHandler) {
-                e.preventDefault();
-                const handled = await backHandler();
-                if (handled) return;
-                if (!onDashboard) {
-                    navigate('/', { replace: true });
-                }
-                return;
-            }
-
-            if (!onDashboard) {
-                e.preventDefault();
-                navigate('/', { replace: true });
-            }
-        };
-
-        window.addEventListener('mouseup', handleMouseUp, { passive: false });
-        return () => window.removeEventListener('mouseup', handleMouseUp);
-    }, [backHandler, location.pathname, navigate]);
+        // No custom mouse-back handling.
+    }, [location.pathname]);
 
     return (
         <div className="app-shell">
