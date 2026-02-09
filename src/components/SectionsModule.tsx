@@ -280,7 +280,7 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                                 style={{
                                     backgroundColor: 'var(--bg-card)',
                                     padding: '1.5rem',
-                                    borderRadius: '0.75rem',
+                                    borderRadius: '0.5rem',
                                     border: '1px solid var(--border-color)',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
@@ -303,11 +303,16 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                                     target.style.borderColor = 'var(--border-color)';
                                 }}
                             >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div style={{ padding: '0.4rem 0.75rem', backgroundColor: 'var(--bg-hover)', borderRadius: '2rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)' }}>
-                                        {section.roomId ? `Room ${section.roomId}` : 'No Room'}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                            <Users size={20} />
+                                        </div>
+                                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {section.name}
+                                        </h3>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
                                         <Button size="sm" variant="ghost" onClick={(e) => handleOpenModal(e, section)} style={{ padding: '0.4rem' }} aria-label="Edit section">
                                             <Pencil size={14} />
                                         </Button>
@@ -317,32 +322,34 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                                     </div>
                                 </div>
 
-                                <div>
-                                    <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', fontWeight: 600 }}>{section.name}</h3>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <User size={14} />
-                                        {profName}
-                                    </div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <User size={14} />
+                                    {profName}
                                 </div>
 
-                                <div style={{ backgroundColor: 'var(--bg-primary)', padding: '0.75rem', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                        {section.days?.join(', ')}
-                                    </div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                        {section.startTime} - {section.endTime}
-                                    </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                    <div>{section.days?.join(', ')}</div>
+                                    <div>{section.startTime} - {section.endTime} • {section.roomId ? `Room ${section.roomId}` : 'No Room'}</div>
                                 </div>
 
-                                <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-                                        <Users size={16} color="var(--text-secondary)" />
-                                        <span style={{ fontWeight: 600 }}>{studentCount} Students</span>
+                                <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        <Users size={14} />
+                                        <span>{studentCount} Students</span>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Attendance</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: attStats.percentage >= 75 ? '#10b981' : attStats.percentage >= 50 ? '#f59e0b' : '#ef4444' }}>
-                                            {attStats.percentage}%
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        Attendance
+                                    </div>
+                                    <div style={{ gridColumn: 'span 2', marginTop: '0.5rem' }}>
+                                        <div style={{ flex: 1, backgroundColor: 'var(--border-color)', borderRadius: '0.25rem', height: '4px', overflow: 'hidden', marginBottom: '0.25rem' }}>
+                                            <div style={{
+                                                width: `${attStats.percentage}%`,
+                                                backgroundColor: attStats.percentage >= 75 ? '#10b981' : attStats.percentage >= 50 ? '#f59e0b' : '#ef4444',
+                                                height: '100%'
+                                            }}></div>
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: attStats.percentage >= 75 ? '#10b981' : attStats.percentage >= 50 ? '#f59e0b' : '#ef4444' }}>
+                                            {attStats.percentage}% Overall Attendance
                                         </span>
                                     </div>
                                 </div>
@@ -363,13 +370,13 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                         }
                     }}
                     style={{
-                        backgroundColor: 'transparent',
+                        backgroundColor: 'var(--bg-card)',
                         padding: '1.5rem',
-                        borderRadius: '0.75rem',
-                        border: '2px dashed var(--border-color)',
+                        borderRadius: '0.5rem',
+                        border: '1px dashed var(--border-color)',
                         cursor: 'pointer',
                         display: 'flex',
-                        flexDirection: 'column',
+                        flexDirection: 'row',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.75rem',
@@ -390,7 +397,7 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection }
                         target.style.backgroundColor = 'transparent';
                     }}
                 >
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', border: '1px solid currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Plus size={24} />
                     </div>
                     <span style={{ fontWeight: 600 }}>Add New Section</span>
@@ -547,6 +554,15 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
     const [transferringStudent, setTransferringStudent] = useState<{ student: Student; fromSection: Section } | null>(null);
     const [isBulkTransfer, setIsBulkTransfer] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
+    const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+    const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+    const [studentForm, setStudentForm] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        birthDate: '',
+        sex: '' as 'Male' | 'Female' | 'Other' | ''
+    });
 
     useEffect(() => {
         loadData();
@@ -627,6 +643,39 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
         setTransferringStudent({ student, fromSection });
         setIsBulkTransfer(false);
         setIsTransferModalOpen(true);
+    };
+
+    const handleOpenStudentModal = (student: Student) => {
+        setEditingStudent(student);
+        setStudentForm({
+            name: student.name,
+            email: student.email,
+            phone: student.phone,
+            birthDate: student.birthDate || '',
+            sex: (student.sex as 'Male' | 'Female' | 'Other' | '') || ''
+        });
+        setIsStudentModalOpen(true);
+    };
+
+    const handleCloseStudentModal = () => {
+        setIsStudentModalOpen(false);
+        setEditingStudent(null);
+        setStudentForm({ name: '', email: '', phone: '', birthDate: '', sex: '' });
+    };
+
+    const handleStudentSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingStudent) return;
+        StorageService.updateStudent({
+            ...editingStudent,
+            name: studentForm.name,
+            email: studentForm.email,
+            phone: studentForm.phone,
+            birthDate: studentForm.birthDate || undefined,
+            sex: studentForm.sex || undefined
+        });
+        handleCloseStudentModal();
+        loadData();
     };
 
     const handleOpenBulkTransferModal = () => {
@@ -877,10 +926,38 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                 }}
                             >
                                 {(isSelected || isPending) && (
-                                    <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                                    <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
                                         <UserCheck size={20} color={isPending ? 'white' : 'var(--primary)'} />
                                     </div>
                                 )}
+                                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '0.35rem' }}>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenStudentModal(student);
+                                        }}
+                                        aria-label="Edit student"
+                                        style={{ padding: '0.35rem' }}
+                                    >
+                                        <Pencil size={14} />
+                                    </Button>
+                                    {otherSections.length > 0 && !isPending && (
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleOpenTransferModal(student, section);
+                                            }}
+                                            aria-label="Transfer student"
+                                            style={{ padding: '0.35rem' }}
+                                        >
+                                            <ArrowRightLeft size={14} />
+                                        </Button>
+                                    )}
+                                </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
                                     <div style={{
                                         width: '48px',
@@ -928,23 +1005,6 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                                     </div>
                                 </div>
 
-                                {otherSections.length > 0 && !isPending && (
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleOpenTransferModal(student, section);
-                                            }}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
-                                        >
-                                            <ArrowRightLeft size={14} />
-                                            Transfer Section
-                                        </Button>
-                                    </div>
-                                )}
-
                                 {isPending && (
                                     <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.3)' }}>
                                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 700, marginBottom: '0.25rem', textTransform: 'uppercase' }}>
@@ -976,6 +1036,54 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges }: SectionDe
                     })
                 )}
             </div>
+
+            <Modal
+                isOpen={isStudentModalOpen}
+                onClose={handleCloseStudentModal}
+                title="Edit Student"
+            >
+                <form onSubmit={handleStudentSubmit}>
+                    <Input
+                        label="Full Name"
+                        value={studentForm.name}
+                        onChange={e => setStudentForm({ ...studentForm, name: e.target.value })}
+                        required
+                    />
+                    <Input
+                        label="Email"
+                        type="email"
+                        value={studentForm.email}
+                        onChange={e => setStudentForm({ ...studentForm, email: e.target.value })}
+                        required
+                    />
+                    <Input
+                        label="Phone"
+                        value={studentForm.phone}
+                        onChange={e => setStudentForm({ ...studentForm, phone: e.target.value })}
+                    />
+                    <Input
+                        label="Birth Date"
+                        type="date"
+                        value={studentForm.birthDate}
+                        onChange={e => setStudentForm({ ...studentForm, birthDate: e.target.value })}
+                    />
+                    <Select
+                        label="Sex"
+                        value={studentForm.sex}
+                        onChange={e => setStudentForm({ ...studentForm, sex: e.target.value as 'Male' | 'Female' | 'Other' | '' })}
+                        options={[
+                            { value: '', label: 'Select' },
+                            { value: 'Male', label: 'Male' },
+                            { value: 'Female', label: 'Female' },
+                            { value: 'Other', label: 'Other' }
+                        ]}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+                        <Button type="button" variant="secondary" onClick={handleCloseStudentModal}>Cancel</Button>
+                        <Button type="submit">Update</Button>
+                    </div>
+                </form>
+            </Modal>
 
             {/* Transfer Student Modal */}
             {isTransferModalOpen && (transferringStudent || isBulkTransfer) && (

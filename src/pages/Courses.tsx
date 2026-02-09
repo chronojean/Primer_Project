@@ -268,7 +268,7 @@ export const Courses = () => {
                         style={{
                             backgroundColor: 'var(--bg-card)',
                             padding: '1.5rem',
-                            borderRadius: '0.75rem',
+                            borderRadius: '0.5rem',
                             border: '1px solid var(--border-color)',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
@@ -291,11 +291,16 @@ export const Courses = () => {
                             target.style.borderColor = 'var(--border-color)';
                         }}
                     >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                                <BookOpen size={24} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                    <BookOpen size={20} />
+                                </div>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {course.name}
+                                </h3>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
                                 <Button size="sm" variant="ghost" onClick={(e) => handleOpenModal(e, course)} style={{ padding: '0.4rem' }} aria-label="Edit course">
                                     <Pencil size={14} />
                                 </Button>
@@ -306,7 +311,6 @@ export const Courses = () => {
                         </div>
 
                         <div>
-                            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', fontWeight: 600 }}>{course.name}</h3>
                             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '2.5rem' }}>
                                 {course.description || 'No description provided.'}
                             </p>
@@ -350,13 +354,13 @@ export const Courses = () => {
                     }
                 }}
                 style={{
-                    backgroundColor: 'transparent',
+                    backgroundColor: 'var(--bg-card)',
                     padding: '1.5rem',
-                    borderRadius: '0.75rem',
-                    border: '2px dashed var(--border-color)',
+                    borderRadius: '0.5rem',
+                    border: '1px dashed var(--border-color)',
                     cursor: 'pointer',
                     display: 'flex',
-                    flexDirection: 'column',
+                    flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.75rem',
@@ -377,7 +381,7 @@ export const Courses = () => {
                     target.style.backgroundColor = 'transparent';
                 }}
             >
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', border: '1px solid currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Plus size={24} />
                 </div>
                 <span style={{ fontWeight: 600 }}>Add New Course</span>
