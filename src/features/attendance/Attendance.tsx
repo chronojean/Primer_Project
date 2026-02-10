@@ -6,6 +6,7 @@ import { Course, Section, Student, Attendance as AttendanceType } from '../../sh
 import { Button } from '../../shared/components/Button';
 import { Save, Calendar, CheckSquare, XSquare, ChevronRight, ChevronDown, LayoutGrid, ArrowLeft, History, UserCheck, Users, Search, Clock, MapPin } from 'lucide-react';
 import { PageHeader } from '../../shared/components/PageHeader';
+import styles from './Attendance.module.css';
 
 export const Attendance = () => {
     // Data
@@ -87,6 +88,12 @@ export const Attendance = () => {
         const activeRecords = record.records.filter(r => StorageService.getEffectiveStudentStatus(r.studentId, sectionId));
         const present = activeRecords.filter(r => r.present).length;
         return { present, total: activeRecords.length };
+    };
+
+    const getAttendanceStatus = (percentage: number) => {
+        if (percentage >= 80) return 'high';
+        if (percentage >= 50) return 'mid';
+        return 'low';
     };
 
     const { showConfirmation } = useConfirmation();
@@ -322,7 +329,7 @@ export const Attendance = () => {
     // Removed custom mouse-back handling.
 
     const renderBreadcrumbs = () => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+        <div className={styles.breadcrumbs}>
             <span
                 role="button"
                 tabIndex={0}
@@ -333,7 +340,7 @@ export const Attendance = () => {
                         handleNavigate(() => { setSelectedCourseId(''); setViewMode('courses'); });
                     }
                 }}
-                style={{ cursor: 'pointer' }}
+                className={styles.breadcrumbLink}
             >
                 Hierarchy
             </span>
@@ -350,7 +357,10 @@ export const Attendance = () => {
                                 handleNavigate(() => { setSelectedSectionId(''); setViewMode('sections'); });
                             }
                         }}
-                        style={{ cursor: 'pointer', fontWeight: viewMode === 'sections' ? 600 : 400, color: viewMode === 'sections' ? 'var(--primary)' : 'inherit' }}
+                        className={[
+                            styles.breadcrumbLink,
+                            viewMode === 'sections' ? styles.breadcrumbActive : ''
+                        ].filter(Boolean).join(' ')}
                     >
                         {currentCourse?.name}
                     </span >
@@ -359,7 +369,7 @@ export const Attendance = () => {
             {selectedSectionId && (
                 <>
                     <ChevronRight size={14} />
-                    <span style={{ fontWeight: 600, color: 'var(--primary)' }}>
+                    <span className={styles.breadcrumbCurrent}>
                         {currentSection?.name.split(' - ')[1] || currentSection?.name}
                     </span>
                 </>
@@ -368,7 +378,7 @@ export const Attendance = () => {
     );
 
     const renderCourses = () => (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+        <div className={styles.courseGrid}>
             {filteredCourses.map(course => (
                 <div
                     key={course.id}
@@ -381,45 +391,22 @@ export const Attendance = () => {
                             setSelectedCourseId(course.id);
                         }
                     }}
-                    style={{
-                        backgroundColor: 'var(--bg-card)',
-                        padding: '1.5rem',
-                        borderRadius: '0.75rem',
-                        border: '1px solid var(--border-color)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: 'var(--shadow-sm)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '1rem'
-                    }}
-                    onMouseEnter={(e) => {
-                        const target = e.currentTarget as HTMLElement;
-                        target.style.transform = 'translateY(-4px)';
-                        target.style.boxShadow = 'var(--shadow-md)';
-                        target.style.borderColor = 'var(--primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                        const target = e.currentTarget as HTMLElement;
-                        target.style.transform = 'none';
-                        target.style.boxShadow = 'var(--shadow-sm)';
-                        target.style.borderColor = 'var(--border-color)';
-                    }}
+                    className={styles.courseCard}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                    <div className={styles.courseCardHeader}>
+                        <div className={styles.courseCardIcon}>
                             <Users size={20} />
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{course.name}</h3>
+                        <div className={styles.courseCardTitleWrap}>
+                            <h3 className={styles.courseCardTitle}>{course.name}</h3>
                         </div>
                     </div>
                     <div>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <p className={styles.courseCardDescription}>
                             {course.description}
                         </p>
                     </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <div className={styles.courseCardFooter}>
                         <span>{sections.filter(s => s.courseId === course.id).length} Sections</span>
                         <ChevronRight size={16} />
                     </div>
@@ -429,7 +416,7 @@ export const Attendance = () => {
     );
 
     const renderSections = () => (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+        <div className={styles.sectionGrid}>
             {displaySections.map(section => (
                 <div
                     key={section.id}
@@ -442,40 +429,20 @@ export const Attendance = () => {
                             setSelectedSectionId(section.id);
                         }
                     }}
-                    style={{
-                        backgroundColor: 'var(--bg-card)',
-                        padding: '1.5rem',
-                        borderRadius: '0.75rem',
-                        border: '1px solid var(--border-color)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: 'var(--shadow-sm)'
-                    }}
-                    onMouseEnter={(e) => {
-                        const target = e.currentTarget as HTMLElement;
-                        target.style.transform = 'translateY(-4px)';
-                        target.style.boxShadow = 'var(--shadow-md)';
-                        target.style.borderColor = 'var(--primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                        const target = e.currentTarget as HTMLElement;
-                        target.style.transform = 'none';
-                        target.style.boxShadow = 'var(--shadow-sm)';
-                        target.style.borderColor = 'var(--border-color)';
-                    }}
+                    className={styles.sectionCard}
                 >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{section.name.split(' - ')[1] || section.name}</h3>
-                        <div style={{ padding: '0.25rem 0.6rem', backgroundColor: 'var(--bg-hover)', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }}>
+                    <div className={styles.sectionCardHeader}>
+                        <h3 className={styles.sectionCardTitle}>{section.name.split(' - ')[1] || section.name}</h3>
+                        <div className={styles.sectionCardBadge}>
                             {StorageService.getActiveStudentIdsForSection(section.id).length} Students
                         </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className={styles.sectionCardMeta}>
+                        <div className={styles.sectionCardMetaRow}>
                             <Clock size={14} />
                             <span>{section.days.join(', ')} • {section.startTime} - {section.endTime}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div className={styles.sectionCardMetaRow}>
                             <MapPin size={14} />
                             <span>Room {section.roomId || 'N/A'}</span>
                         </div>
@@ -492,29 +459,7 @@ export const Attendance = () => {
                         handleNavigate(() => { setSelectedCourseId(''); setViewMode('courses'); });
                     }
                 }}
-                style={{
-                    backgroundColor: 'transparent',
-                    padding: '1.5rem',
-                    borderRadius: '0.75rem',
-                    border: '2px dashed var(--border-color)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.75rem',
-                    color: 'var(--text-secondary)',
-                    transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                    const target = e.currentTarget as HTMLElement;
-                    target.style.borderColor = 'var(--primary)';
-                    target.style.color = 'var(--primary)';
-                }}
-                onMouseLeave={(e) => {
-                    const target = e.currentTarget as HTMLElement;
-                    target.style.borderColor = 'var(--border-color)';
-                    target.style.color = 'var(--text-secondary)';
-                }}
+                className={styles.backCard}
             >
                 <ArrowLeft size={20} />
                 <span>Back to Courses</span>
@@ -523,17 +468,15 @@ export const Attendance = () => {
     );
 
     const renderDashboard = () => (
-        <div
-            style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}
-        >
+        <div className={styles.dashboard}>
             {/* Dashboard Header/Tabs */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem', backgroundColor: 'var(--bg-card)', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <div className={styles.dashboardHeader}>
+                <div className={styles.dashboardTabs}>
                     <Button
                         onClick={() => setActiveTab('mark')}
                         variant={activeTab === 'mark' ? 'primary' : 'secondary'}
                         size="md"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        className={styles.tabButton}
                     >
                         <UserCheck size={18} /> Mark Attendance
                     </Button>
@@ -541,20 +484,20 @@ export const Attendance = () => {
                         onClick={() => setActiveTab('history')}
                         variant={activeTab === 'history' ? 'primary' : 'secondary'}
                         size="md"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        className={styles.tabButton}
                     >
                         <History size={18} /> History
                     </Button>
                 </div>
 
                 {activeTab === 'mark' && enrolledStudents.length > 0 && (
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', paddingRight: '0.5rem' }}>
+                    <div className={styles.dashboardSelection}>
                         {/* Selection Controls: Select all, clear, selected counter */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div className={styles.selectionControls}>
                             {selectedIds.length > 0 && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.75rem', borderRight: '1px solid var(--border-color)' }}>
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)', animation: 'pulse 2s infinite' }}></div>
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)' }}>
+                                <div className={styles.selectedBadge}>
+                                    <div className={styles.selectedDot}></div>
+                                    <span className={styles.selectedText}>
                                         {selectedIds.length} Selected
                                     </span>
                                 </div>
@@ -563,7 +506,7 @@ export const Attendance = () => {
                                 size="sm"
                                 variant="secondary"
                                 onClick={selectAll}
-                                style={{ fontWeight: 600 }}
+                                className={styles.actionButton}
                             >
                                 Select All
                             </Button>
@@ -572,21 +515,21 @@ export const Attendance = () => {
                                 variant="secondary"
                                 onClick={handleReset}
                                 disabled={!hasUnsavedChanges && selectedIds.length === 0}
-                                style={{ fontWeight: 600 }}
+                                className={styles.actionButton}
                             >
                                 Reset
                             </Button>
                         </div>
 
-                        <div style={{ height: '20px', width: '1px', backgroundColor: 'var(--border-color)', margin: '0 0.25rem' }}></div>
+                        <div className={styles.dashboardDivider}></div>
 
-                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        <div className={styles.dashboardButtons}>
                             <Button
                                 size="sm"
                                 variant="success"
                                 onClick={() => markSelected(true)}
                                 disabled={selectedIds.length === 0}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
+                                className={styles.actionButton}
                             >
                                 <CheckSquare size={14} /> Mark Selected Present
                             </Button>
@@ -595,7 +538,7 @@ export const Attendance = () => {
                                 variant="danger"
                                 onClick={() => markSelected(false)}
                                 disabled={selectedIds.length === 0}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
+                                className={styles.actionButton}
                             >
                                 <XSquare size={14} /> Mark Selected Absent
                             </Button>
@@ -607,35 +550,26 @@ export const Attendance = () => {
             {activeTab === 'mark' ? (
                 <>
                     {/* Date Picker & Controls */}
-                    <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ position: 'relative' }}>
-                                <Calendar size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                    <div className={styles.dateCard}>
+                        <div className={styles.dateRow}>
+                            <div className={styles.dateInputWrap}>
+                                <Calendar size={18} className={styles.dateInputIcon} />
                                 <input
                                     type="date"
                                     value={selectedDate}
                                     onChange={e => setSelectedDate(e.target.value)}
-                                    style={{
-                                        padding: '0.6rem 1rem 0.6rem 2.75rem',
-                                        backgroundColor: 'var(--bg-input)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '0.375rem',
-                                        color: 'var(--text-primary)',
-                                        fontSize: '0.95rem',
-                                        outline: 'none',
-                                        width: '200px'
-                                    }}
+                                    className={styles.dateInput}
                                 />
                             </div>
-                            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                            <span className={styles.dateNote}>
                                 {selectedDate === new Date().toISOString().split('T')[0] ? "(Today's Lesson)" : ""}
                             </span>
                         </div>
 
                         {/* Status Message & Save Button */}
-                        <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+                        <div className={styles.statusActions}>
                             {statusMessage && (
-                                <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span className={styles.statusMessage}>
                                     <CheckSquare size={16} /> {statusMessage}
                                 </span>
                             )}
@@ -644,55 +578,42 @@ export const Attendance = () => {
                                 onClick={handleSave}
                                 disabled={enrolledStudents.length === 0 || !hasUnsavedChanges}
                                 size="sm"
-                                style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
+                                className={styles.saveButton}
                             >
                                 <Save size={18} /> Save Changes
                             </Button>
                         </div>
                     </div>
 
-                    <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '0.75rem', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                    <div className={styles.summaryCard}>
                         {/* Summary Bar */}
-                        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)' }}>
-                            <div style={{ flex: 1, padding: '1.25rem', backgroundColor: '#ecfdf5', color: '#065f46', textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{presentCount}</div>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Present</div>
+                        <div className={styles.summaryRow}>
+                            <div className={`${styles.summaryBlock} ${styles.summaryBlockPresent}`}>
+                                <div className={styles.summaryValue}>{presentCount}</div>
+                                <div className={styles.summaryLabel}>Present</div>
                             </div>
-                            <div style={{ flex: 1, padding: '1.25rem', backgroundColor: '#fef2f2', color: '#991b1b', textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{absentCount}</div>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Absent</div>
+                            <div className={`${styles.summaryBlock} ${styles.summaryBlockAbsent}`}>
+                                <div className={styles.summaryValue}>{absentCount}</div>
+                                <div className={styles.summaryLabel}>Absent</div>
                             </div>
                         </div>
 
                         {enrolledStudents.length === 0 ? (
-                            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                <Users size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
+                            <div className={styles.summaryEmpty}>
+                                <Users size={48} className={styles.summaryEmptyIcon} />
                                 <p>No students enrolled in this section.</p>
                             </div>
                         ) : (
                             <div
-                                style={{
-                                    padding: '1.5rem',
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: '0.75rem',
-                                    maxHeight: '600px',
-                                    overflowY: 'auto',
-                                    backgroundColor: '#fafafa'
-                                }}
+                                className={styles.studentChips}
                             >
                                 {filteredEnrolledStudents.length === 0 ? (
-                                    <div style={{ width: '100%', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                    <div className={styles.emptyState}>
                                         No students match your search.
                                     </div>
                                 ) : filteredEnrolledStudents.map(student => {
                                     const isPresent = !!attendanceRecords[student.id];
                                     const isSelected = selectedIds.includes(student.id);
-
-                                    // Status colors
-                                    const bgColor = isSelected ? '#1e3a8a' : (isPresent ? '#10b981' : '#ef4444');
-                                    const borderColor = isSelected ? '#312e81' : (isPresent ? '#059669' : '#dc2626');
-                                    const textColor = 'white';
 
                                     return (
                                         <div
@@ -708,48 +629,17 @@ export const Attendance = () => {
                                                     toggleSelection(student.id);
                                                 }
                                             }}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.75rem',
-                                                padding: '0.6rem 1.25rem',
-                                                borderRadius: '2rem',
-                                                cursor: 'pointer',
-                                                width: 'fit-content',
-                                                backgroundColor: bgColor,
-                                                border: `2px solid ${borderColor}`,
-                                                color: textColor,
-                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                boxShadow: isSelected ? '0 0 0 3px rgba(30, 58, 138, 0.2), var(--shadow-sm)' : 'var(--shadow-sm)',
-                                                userSelect: 'none',
-                                                transform: isSelected ? 'scale(1.02)' : 'none'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                const target = e.currentTarget as HTMLElement;
-                                                target.style.transform = isSelected ? 'scale(1.02) translateY(-2px)' : 'translateY(-2px)';
-                                                target.style.boxShadow = 'var(--shadow-md)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                const target = e.currentTarget as HTMLElement;
-                                                target.style.transform = isSelected ? 'scale(1.02)' : 'none';
-                                                target.style.boxShadow = isSelected ? '0 0 0 3px rgba(30, 58, 138, 0.2), var(--shadow-sm)' : 'var(--shadow-sm)';
-                                            }}
+                                            className={[
+                                                styles.studentChip,
+                                                isSelected ? styles.studentChipSelected : '',
+                                                !isSelected && isPresent ? styles.studentChipPresent : '',
+                                                !isSelected && !isPresent ? styles.studentChipAbsent : ''
+                                            ].filter(Boolean).join(' ')}
                                         >
-                                            <div style={{
-                                                width: '24px',
-                                                height: '24px',
-                                                borderRadius: '50%',
-                                                backgroundColor: 'rgba(255,255,255,0.3)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 800,
-                                                color: 'white'
-                                            }}>
+                                            <div className={styles.studentChipAvatar}>
                                                 {formatStudentName(student.name).charAt(0)}
                                             </div>
-                                            <span style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+                                            <span className={styles.studentChipName}>
                                                 {formatStudentName(student.name)}
                                             </span>
                                         </div>
@@ -761,13 +651,13 @@ export const Attendance = () => {
                     </div>
                 </>
             ) : (
-                <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '0.75rem', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-                    <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-color)', backgroundColor: '#f8fafc', fontWeight: 600, color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div className={styles.historyCard}>
+                    <div className={styles.historyHeader}>
                         Previous Lessons ({getHistory().length})
                     </div>
                     {getHistory().length === 0 ? (
-                        <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                            <History size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
+                        <div className={styles.historyEmpty}>
+                            <History size={48} className={styles.historyEmptyIcon} />
                             <p>No attendance records found for this section yet.</p>
                         </div>
                     ) : (
@@ -775,7 +665,8 @@ export const Attendance = () => {
                             {getHistory().map(record => {
                                 const { present, total } = getActiveRecordStats(record, record.sectionId);
                                 return (
-                                    <div key={record.id}
+                                    <div
+                                        key={record.id}
                                         onClick={() => handleEditHistory(record)}
                                         role="button"
                                         tabIndex={0}
@@ -785,25 +676,15 @@ export const Attendance = () => {
                                                 handleEditHistory(record);
                                             }
                                         }}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '1.25rem',
-                                            borderBottom: '1px solid var(--border-color)',
-                                            transition: 'background-color 0.2s',
-                                            cursor: 'pointer'
-                                        }}
-                                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = '#f8fafc'}
-                                        onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'}
+                                        className={styles.historyItem}
                                     >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                                            <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-hover)', borderRadius: '0.5rem', color: 'var(--primary)' }}>
+                                        <div className={styles.historyItemContent}>
+                                            <div className={styles.historyItemIcon}>
                                                 <Calendar size={20} />
                                             </div>
                                             <div>
-                                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{new Date(record.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                                <div className={styles.historyItemDate}>{new Date(record.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                                <div className={styles.historyItemMeta}>
                                                     {present} of {total} students present • {total > 0 ? Math.round((present / total) * 100) : 0}% Attendance
                                                 </div>
                                             </div>
@@ -851,12 +732,12 @@ export const Attendance = () => {
 
         if (sortedDates.length === 0) {
             return (
-                <div style={{ backgroundColor: 'var(--bg-card)', padding: '4rem', textAlign: 'center', borderRadius: '0.75rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                    <History size={64} style={{ marginBottom: '1.5rem', opacity: 0.1 }} />
-                    <h3 style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>
+                <div className={styles.timelineEmpty}>
+                    <History size={64} className={styles.timelineEmptyIcon} />
+                    <h3 className={styles.timelineEmptyTitle}>
                         {searchTerm.trim() ? 'No Matching Records' : 'No Timeline History'}
                     </h3>
-                    <p style={{ margin: 0 }}>
+                    <p className={styles.timelineEmptyText}>
                         {searchTerm.trim() ? 'Try a different search term.' : 'Start marking attendance to see your chronology here.'}
                     </p>
                 </div>
@@ -864,26 +745,27 @@ export const Attendance = () => {
         }
 
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className={styles.timelineList}>
                 {sortedDates.map(date => (
                     <div key={date}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
-                            <div style={{ padding: '0.4rem 0.8rem', backgroundColor: 'var(--primary)', color: 'white', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.85rem' }}>
+                        <div className={styles.timelineHeader}>
+                            <div className={styles.timelineDateBadge}>
                                 {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </div>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>
+                            <h3 className={styles.timelineDateTitle}>
                                 {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric' })}
                             </h3>
-                            <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                            <div className={styles.timelineDivider}></div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.25rem' }}>
+                        <div className={styles.timelineGrid}>
                             {filteredGroupedByDate[date].map(record => {
                                 const section = sections.find(s => s.id === record.sectionId);
                                 const course = courses.find(c => c && section && c.id === section.courseId);
                                 const { present: presentCount, total: totalCount } = getActiveRecordStats(record, record.sectionId);
                                 const percentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
                                 const isExpanded = expandedTimelineDate === record.id;
+                                const attendanceStatus = getAttendanceStatus(percentage);
 
                                 const attendingStudents = record.records
                                     .filter(r => r.present && StorageService.getEffectiveStudentStatus(r.studentId, record.sectionId))
@@ -894,7 +776,7 @@ export const Attendance = () => {
                                 return (
                                     <div
                                         key={record.id}
-                                        style={{ backgroundColor: 'var(--bg-card)', borderRadius: '0.75rem', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}
+                                        className={styles.timelineCard}
                                     >
                                         <div
                                             onClick={() => setExpandedTimelineDate(isExpanded ? null : record.id)}
@@ -906,37 +788,43 @@ export const Attendance = () => {
                                                     setExpandedTimelineDate(isExpanded ? null : record.id);
                                                 }
                                             }}
-                                            style={{ padding: '1.25rem', cursor: 'pointer', transition: 'background-color 0.2s', backgroundColor: isExpanded ? 'var(--bg-hover)' : 'transparent' }}
+                                            className={[
+                                                styles.timelineCardHeader,
+                                                isExpanded ? styles.timelineCardHeaderActive : ''
+                                            ].filter(Boolean).join(' ')}
                                         >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                            <div className={styles.timelineCardTitleRow}>
                                                 <div>
-                                                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>{course?.name || 'Unknown'}</div>
-                                                    <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{section?.name || 'Unknown'}</div>
+                                                    <div className={styles.timelineCardCourse}>{course?.name || 'Unknown'}</div>
+                                                    <div className={styles.timelineCardTitle}>{section?.name || 'Unknown'}</div>
                                                 </div>
-                                                <div style={{ textAlign: 'right' }}>
-                                                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: percentage >= 80 ? '#10b981' : percentage >= 50 ? '#f59e0b' : '#ef4444' }}>{percentage}%</div>
-                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700 }}>ATTENDANCE</div>
+                                                <div className={styles.timelineMetric}>
+                                                    <div className={[
+                                                        styles.timelineMetricValue,
+                                                        styles[`timelineMetric${attendanceStatus}`]
+                                                    ].join(' ')}>{percentage}%</div>
+                                                    <div className={styles.timelineMetricLabel}>ATTENDANCE</div>
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <div className={styles.timelineCardMeta}>
+                                                <div className={styles.timelineCardMetaItem}>
                                                     <Users size={14} /> <span>{presentCount} / {totalCount} Students</span>
                                                 </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--primary)', fontWeight: 600 }}>
-                                                    {isExpanded ? 'Hide Details' : 'View Details'} <ChevronDown size={14} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'all 0.2s' }} />
+                                                <div className={styles.timelineToggle}>
+                                                    {isExpanded ? 'Hide Details' : 'View Details'} <ChevronDown size={14} className={isExpanded ? styles.timelineChevronOpen : styles.timelineChevron} />
                                                 </div>
                                             </div>
                                         </div>
 
                                         {isExpanded && (
-                                            <div style={{ padding: '1.25rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Present Students</div>
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                            <div className={styles.timelineDetails}>
+                                                <div className={styles.timelineDetailsTitle}>Present Students</div>
+                                                <div className={styles.timelineDetailsList}>
                                                     {attendingStudents.length === 0 ? (
-                                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No students present</div>
+                                                        <div className={styles.timelineDetailsEmpty}>No students present</div>
                                                     ) : (
                                                         attendingStudents.map(s => (
-                                                            <div key={s.id} style={{ padding: '0.2rem 0.5rem', backgroundColor: 'var(--bg-hover)', borderRadius: '0.25rem', fontSize: '0.75rem', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
+                                                            <div key={s.id} className={styles.timelineStudentChip}>
                                                                 {formatStudentName(s.name)}
                                                             </div>
                                                         ))
@@ -945,14 +833,14 @@ export const Attendance = () => {
                                                 <Button
                                                     variant="secondary"
                                                     size="sm"
-                                                    style={{ width: '100%', marginTop: '1.25rem', fontWeight: 700 }}
+                                                    className={styles.timelineDetailsButton}
                                                     onClick={() => {
                                                         setSelectedCourseId(course?.id || '');
                                                         setSelectedSectionId(record.sectionId);
                                                         setSelectedDate(record.date);
                                                     }}
                                                 >
-                                                    <UserCheck size={14} style={{ marginRight: '0.5rem' }} /> Dashboard
+                                                    <UserCheck size={14} className={styles.timelineDetailsButtonIcon} /> Dashboard
                                                 </Button>
                                             </div>
                                         )}
@@ -999,12 +887,12 @@ export const Attendance = () => {
 
         if (sortedDates.length === 0) {
             return (
-                <div style={{ backgroundColor: 'var(--bg-card)', padding: '4rem', textAlign: 'center', borderRadius: '0.75rem', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                    <LayoutGrid size={64} style={{ marginBottom: '1.5rem', opacity: 0.1 }} />
-                    <h3 style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>
+                <div className={styles.drilldownEmpty}>
+                    <LayoutGrid size={64} className={styles.drilldownEmptyIcon} />
+                    <h3 className={styles.drilldownEmptyTitle}>
                         {searchTerm.trim() ? 'No Matching Records' : 'No Records for Drilldown'}
                     </h3>
-                    <p style={{ margin: 0 }}>
+                    <p className={styles.drilldownEmptyText}>
                         {searchTerm.trim() ? 'Try a different search term.' : 'Attendance data will appear here once saved.'}
                     </p>
                 </div>
@@ -1012,13 +900,13 @@ export const Attendance = () => {
         }
 
         return (
-            <div style={{ borderRadius: '0.75rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+            <div className={styles.drilldownCard}>
                 {sortedDates.map((date, idx) => {
                     const isDateExpanded = expandedDrilldownDate === date;
                     const dailyRecords = filteredGroupedByDate[date];
 
                     return (
-                        <div key={date} style={{ borderBottom: idx === sortedDates.length - 1 ? 'none' : '1px solid var(--border-color)' }}>
+                        <div key={date} className={idx === sortedDates.length - 1 ? styles.drilldownRowLast : styles.drilldownRow}>
                             {/* Level 1: Date Row */}
                             <div
                                 onClick={() => setExpandedDrilldownDate(isDateExpanded ? null : date)}
@@ -1030,25 +918,28 @@ export const Attendance = () => {
                                         setExpandedDrilldownDate(isDateExpanded ? null : date);
                                     }
                                 }}
-                                style={{ padding: '1.25rem 1.5rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDateExpanded ? 'var(--bg-hover)' : 'transparent', transition: 'all 0.2s' }}
+                                className={[
+                                    styles.drilldownRowHeader,
+                                    isDateExpanded ? styles.drilldownRowHeaderActive : ''
+                                ].filter(Boolean).join(' ')}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                    <div style={{ color: isDateExpanded ? 'var(--primary)' : 'var(--text-secondary)', transition: 'transform 0.2s', transform: isDateExpanded ? 'rotate(180deg)' : 'none' }}>
+                                <div className={styles.drilldownRowLeft}>
+                                    <div className={isDateExpanded ? styles.drilldownChevronOpen : styles.drilldownChevron}>
                                         <ChevronDown size={20} />
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })}</div>
-                                        <div style={{ fontWeight: 700, fontSize: '1.1rem', color: isDateExpanded ? 'var(--primary)' : 'var(--text-primary)' }}>{new Date(date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                    <div className={styles.drilldownDateText}>
+                                        <div className={styles.drilldownDateLabel}>{new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })}</div>
+                                        <div className={isDateExpanded ? styles.drilldownDateValueActive : styles.drilldownDateValue}>{new Date(date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
                                     </div>
                                 </div>
-                                <div style={{ padding: '0.4rem 0.8rem', backgroundColor: isDateExpanded ? 'var(--primary)' : 'var(--bg-hover)', color: isDateExpanded ? 'white' : 'var(--primary)', borderRadius: '2rem', fontSize: '0.8rem', fontWeight: 700 }}>
+                                <div className={isDateExpanded ? styles.drilldownBadgeActive : styles.drilldownBadge}>
                                     {dailyRecords.length} {dailyRecords.length === 1 ? 'Section' : 'Sections'}
                                 </div>
                             </div>
 
                             {/* Level 2: Sections Dropdown */}
                             {isDateExpanded && (
-                                <div style={{ backgroundColor: 'rgba(0,0,0,0.01)', borderTop: '1px solid var(--border-color)', padding: '0.5rem 0' }}>
+                                <div className={styles.drilldownSectionList}>
                                     {dailyRecords.map(record => {
                                         const section = sections.find(s => s.id === record.sectionId);
                                         const course = courses.find(c => c && section && c.id === section.courseId);
@@ -1067,39 +958,40 @@ export const Attendance = () => {
                                                             setExpandedSectionId(isSectionExpanded ? null : record.id);
                                                         }
                                                     }}
-                                                    style={{ padding: '1rem 1.5rem 1rem 4rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isSectionExpanded ? 'white' : 'transparent', transition: 'all 0.2s', borderBottom: isSectionExpanded ? '1px solid var(--border-color)' : 'none' }}
+                                                    className={[
+                                                        styles.drilldownSectionRow,
+                                                        isSectionExpanded ? styles.drilldownSectionRowActive : ''
+                                                    ].filter(Boolean).join(' ')}
                                                 >
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                        <ChevronRight size={18} style={{ color: isSectionExpanded ? 'var(--primary)' : '#94a3b8', transform: isSectionExpanded ? 'rotate(90deg)' : 'none', transition: 'all 0.2s' }} />
+                                                    <div className={styles.drilldownSectionLeft}>
+                                                        <ChevronRight size={18} className={isSectionExpanded ? styles.drilldownSectionChevronOpen : styles.drilldownSectionChevron} />
                                                         <div>
-                                                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase' }}>{course?.name}</div>
-                                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{section?.name}</div>
+                                                            <div className={styles.drilldownSectionCourse}>{course?.name}</div>
+                                                            <div className={styles.drilldownSectionTitle}>{section?.name}</div>
                                                         </div>
                                                     </div>
-                                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                                        <div style={{ textAlign: 'right' }}>
-                                                            <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>{presentCount} Present</div>
-                                                            <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>at this time</div>
-                                                        </div>
+                                                    <div className={styles.drilldownSectionStats}>
+                                                        <div className={styles.drilldownSectionCount}>{presentCount} Present</div>
+                                                        <div className={styles.drilldownSectionCountLabel}>at this time</div>
                                                     </div>
                                                 </div>
 
                                                 {/* Level 3: Attendee Cards */}
                                                 {isSectionExpanded && (
-                                                    <div style={{ padding: '1.5rem 1.5rem 1.5rem 5.5rem', backgroundColor: 'white', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                                                    <div className={styles.drilldownAttendees}>
                                                         {getActiveRecordStats(record, record.sectionId).present === 0 ? (
-                                                            <div style={{ gridColumn: '1 / -1', color: '#64748b', fontSize: '0.9rem', fontStyle: 'italic' }}>No attendees recorded.</div>
+                                                            <div className={styles.drilldownAttendeesEmpty}>No attendees recorded.</div>
                                                         ) : (
                                                             record.records.filter(r => r.present && StorageService.getEffectiveStudentStatus(r.studentId, record.sectionId)).map(r => {
                                                                 const student = allStudents.find(s => s.id === r.studentId);
                                                                 return (
-                                                                    <div key={r.studentId} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
-                                                                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--bg-hover)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>
+                                                                    <div key={r.studentId} className={styles.drilldownAttendeeCard}>
+                                                                        <div className={styles.drilldownAttendeeAvatar}>
                                                                             {student?.name.charAt(0)}
                                                                         </div>
-                                                                        <div style={{ overflow: 'hidden' }}>
-                                                                            <div style={{ fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{student ? formatStudentName(student.name) : 'Unknown'}</div>
-                                                                            <div style={{ fontSize: '0.65rem', color: '#22c55e', fontWeight: 800 }}>PRESENT</div>
+                                                                        <div className={styles.drilldownAttendeeInfo}>
+                                                                            <div className={styles.drilldownAttendeeName}>{student ? formatStudentName(student.name) : 'Unknown'}</div>
+                                                                            <div className={styles.drilldownAttendeeStatus}>PRESENT</div>
                                                                         </div>
                                                                     </div>
                                                                 );
@@ -1120,13 +1012,13 @@ export const Attendance = () => {
     };
 
     return (
-        <div className="module" style={{ position: 'relative', gap: 0 }}>
+        <div className={`module ${styles.attendanceModule}`}>
             <PageHeader
                 compact={true}
                 title="Attendance"
                 actions={
-                    <div style={{ position: 'relative', width: '320px' }}>
-                        <Search size={18} style={{ position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <div className={styles.searchWrap}>
+                        <Search size={18} className={styles.searchIcon} />
                         <input
                             type="text"
                             placeholder={
@@ -1144,27 +1036,36 @@ export const Attendance = () => {
                                     setSearchTerm('');
                                 }
                             }}
-                            style={{ width: '100%', padding: '0.75rem 1.25rem 0.75rem 3.25rem', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '2rem', fontSize: '0.9rem', outline: 'none', boxShadow: 'var(--shadow-sm)', transition: 'border-color 0.2s' }}
+                            className={styles.searchInput}
                         />
                     </div>
                 }
             >
-                <div style={{ display: 'flex', backgroundColor: 'var(--bg-card)', padding: '0.25rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+                <div className={styles.mainTabs}>
                     <button
                         onClick={() => setMainTab('hierarchy')}
-                        style={{ padding: '0.6rem 1.25rem', border: 'none', borderRadius: '0.5rem', backgroundColor: mainTab === 'hierarchy' ? 'var(--primary)' : 'transparent', color: mainTab === 'hierarchy' ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.6rem' }}
+                        className={[
+                            styles.mainTabButton,
+                            mainTab === 'hierarchy' ? styles.mainTabButtonActive : ''
+                        ].filter(Boolean).join(' ')}
                     >
                         <Users size={16} /> Hierarchy
                     </button>
                     <button
                         onClick={() => setMainTab('timeline')}
-                        style={{ padding: '0.6rem 1.25rem', border: 'none', borderRadius: '0.5rem', backgroundColor: mainTab === 'timeline' ? 'var(--primary)' : 'transparent', color: mainTab === 'timeline' ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.6rem' }}
+                        className={[
+                            styles.mainTabButton,
+                            mainTab === 'timeline' ? styles.mainTabButtonActive : ''
+                        ].filter(Boolean).join(' ')}
                     >
                         <Clock size={16} /> Timeline
                     </button>
                     <button
                         onClick={() => setMainTab('drilldown')}
-                        style={{ padding: '0.6rem 1.25rem', border: 'none', borderRadius: '0.5rem', backgroundColor: mainTab === 'drilldown' ? 'var(--primary)' : 'transparent', color: mainTab === 'drilldown' ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.6rem' }}
+                        className={[
+                            styles.mainTabButton,
+                            mainTab === 'drilldown' ? styles.mainTabButtonActive : ''
+                        ].filter(Boolean).join(' ')}
                     >
                         <LayoutGrid size={16} /> Drilldown
                     </button>
@@ -1175,7 +1076,7 @@ export const Attendance = () => {
                 mainTab === 'hierarchy' ? (
                     <>
                         {renderBreadcrumbs()}
-                        <div style={{ marginTop: 0 }}>
+                        <div className={styles.hierarchyContent}>
                             {viewMode === 'courses' && renderCourses()}
                             {viewMode === 'sections' && renderSections()}
                             {viewMode === 'dashboard' && renderDashboard()}

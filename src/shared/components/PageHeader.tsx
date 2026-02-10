@@ -1,5 +1,5 @@
 import React from 'react';
-
+import styles from './PageHeader.module.css';
 
 interface PageHeaderProps {
     title: string | React.ReactNode;
@@ -10,28 +10,21 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ title, actions, children, compact = false }: PageHeaderProps) => {
     return (
-        <div className="page-header" style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: compact ? 0 : 'var(--space-4)',
-        }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                <h1 style={{
-                    fontSize: 'var(--font-size-2xl)',
-                    fontWeight: 'var(--font-weight-bold)',
-                    margin: 0
-                }}>
+        <div
+            className={[
+                'page-header',
+                styles.pageHeader,
+                compact ? styles.pageHeaderCompact : ''
+            ].filter(Boolean).join(' ')}
+        >
+            <div className={styles.pageHeaderTitleRow}>
+                <h1 className={styles.pageHeaderTitle}>
                     {title}
                 </h1>
                 {children}
             </div>
             {actions && (
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-2)'
-                }}>
+                <div className={styles.pageHeaderActions}>
                     {actions}
                 </div>
             )}

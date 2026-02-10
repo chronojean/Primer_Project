@@ -387,7 +387,7 @@ export const Courses = () => {
 
     return (
         <>
-            <div className="module" style={{ gap: 0 }}>
+        <div className={`module ${styles.moduleNoGap}`}>
                 <PageHeader
                     compact={true}
                     title={headerTitle}

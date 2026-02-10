@@ -354,6 +354,12 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
         return professors.find(p => p.id === id)?.name || 'Unknown Professor';
     };
 
+    const getAttendanceStatus = (percentage: number) => {
+        if (percentage >= 75) return 'high';
+        if (percentage >= 50) return 'mid';
+        return 'low';
+    };
+
     const studentsForEnrollment = StorageService.getStudents();
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const displaySections = normalizedSearch
@@ -363,25 +369,25 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
     return (
         <div>
             {!hideHeader && (
-                <div className="module-header" style={{ marginBottom: '2rem' }}>
+                <div className={`module-header ${styles.moduleHeaderLarge}`}>
                     <h1>Sections</h1>
                     <div className="module-actions">
                         <Button onClick={() => handleOpenModal()}>
-                            <Plus size={16} style={{ marginRight: '0.5rem' }} /> Add Section
+                            <Plus size={16} className={styles.iconSpacingRight} /> Add Section
                         </Button>
                     </div>
                 </div>
             )}
 
             {courseId && hideHeader && (
-                <div className="module-header" style={{ marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Manage Sections</h2>
+                <div className={`module-header ${styles.moduleHeaderCompact}`}>
+                    <h2 className={styles.moduleHeaderTitle}>Manage Sections</h2>
                 </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className={styles.sectionGrid}>
                 {displaySections.length === 0 ? (
-                    <div style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '0.75rem' }}>
+                    <div className={styles.emptyState}>
                         {sections.length === 0 ? 'No sections found.' : 'No sections match your search.'}
                     </div>
                 ) : (
@@ -402,79 +408,61 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
                                         onSelectSection?.(section.id);
                                     }
                                 }}
-                                style={{
-                                    backgroundColor: 'var(--bg-card)',
-                                    padding: '1.5rem',
-                                    borderRadius: '0.5rem',
-                                    border: '1px solid var(--border-color)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: 'var(--shadow-sm)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '1rem',
-                                    position: 'relative'
-                                }}
-                                onMouseEnter={(e) => {
-                                    const target = e.currentTarget as HTMLElement;
-                                    target.style.transform = 'translateY(-4px)';
-                                    target.style.boxShadow = 'var(--shadow-md)';
-                                    target.style.borderColor = 'var(--primary)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    const target = e.currentTarget as HTMLElement;
-                                    target.style.transform = 'none';
-                                    target.style.boxShadow = 'var(--shadow-sm)';
-                                    target.style.borderColor = 'var(--border-color)';
-                                }}
+                                className={styles.sectionCard}
                             >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                <div className={styles.sectionCardHeader}>
+                                    <div className={styles.sectionCardTitleRow}>
+                                        <div className={styles.sectionCardIcon}>
                                             <Users size={20} />
                                         </div>
-                                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <h3 className={styles.sectionCardTitle}>
                                             {section.name}
                                         </h3>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
-                                        <Button size="sm" variant="ghost" onClick={(e) => handleOpenModal(e, section)} style={{ padding: '0.4rem' }} aria-label="Edit section">
+                                    <div className={styles.sectionCardActions}>
+                                        <Button size="sm" variant="ghost" onClick={(e) => handleOpenModal(e, section)} className={styles.sectionCardActionButton} aria-label="Edit section">
                                             <Pencil size={14} />
                                         </Button>
-                                        <Button size="sm" variant="ghost" onClick={(e) => handleDelete(e, section.id)} style={{ padding: '0.4rem', color: '#ef4444' }} aria-label="Delete section">
+                                        <Button size="sm" variant="ghost" onClick={(e) => handleDelete(e, section.id)} className={`${styles.sectionCardActionButton} ${styles.sectionCardActionButtonDanger}`} aria-label="Delete section">
                                             <Trash2 size={14} />
                                         </Button>
                                     </div>
                                 </div>
 
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <div className={styles.sectionCardMeta}>
                                     <User size={14} />
                                     {profName}
                                 </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                <div className={styles.sectionCardMetaList}>
                                     <div>{section.days?.join(', ')}</div>
                                     <div>{section.startTime} - {section.endTime}</div>
                                     <div>{section.roomId ? `Room ${section.roomId}` : 'No Room'}</div>
                                 </div>
 
-                                <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                <div className={styles.sectionCardFooter}>
+                                    <div className={styles.sectionCardFooterItem}>
                                         <Users size={14} />
                                         <span>{studentCount} Students</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                    <div className={styles.sectionCardFooterRight}>
                                         Attendance
                                     </div>
-                                    <div style={{ gridColumn: 'span 2', marginTop: '0.5rem' }}>
-                                        <div style={{ flex: 1, backgroundColor: 'var(--border-color)', borderRadius: '0.25rem', height: '4px', overflow: 'hidden', marginBottom: '0.25rem' }}>
-                                            <div style={{
-                                                width: `${attStats.percentage}%`,
-                                                backgroundColor: attStats.percentage >= 75 ? '#10b981' : attStats.percentage >= 50 ? '#f59e0b' : '#ef4444',
-                                                height: '100%'
-                                            }}></div>
-                                        </div>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: attStats.percentage >= 75 ? '#10b981' : attStats.percentage >= 50 ? '#f59e0b' : '#ef4444' }}>
+                                    <div className={styles.sectionCardAttendance}>
+                                        <progress
+                                            className={[
+                                                styles.sectionAttendanceProgress,
+                                                styles[`sectionAttendanceProgress${getAttendanceStatus(attStats.percentage)}`]
+                                            ].join(' ')}
+                                            value={attStats.percentage}
+                                            max={100}
+                                        />
+                                        <span
+                                            className={[
+                                                styles.sectionAttendanceValue,
+                                                styles[`sectionAttendanceValue${getAttendanceStatus(attStats.percentage)}`]
+                                            ].join(' ')}
+                                        >
                                             {attStats.percentage}% Overall Attendance
                                         </span>
                                     </div>
@@ -495,38 +483,12 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
                             handleOpenModal();
                         }
                     }}
-                    style={{
-                        backgroundColor: 'var(--bg-card)',
-                        padding: '1.5rem',
-                        borderRadius: '0.5rem',
-                        border: '1px dashed var(--border-color)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.75rem',
-                        color: 'var(--text-secondary)',
-                        transition: 'all 0.2s',
-                        minHeight: '200px'
-                    }}
-                    onMouseEnter={(e) => {
-                        const target = e.currentTarget as HTMLElement;
-                        target.style.borderColor = 'var(--primary)';
-                        target.style.color = 'var(--primary)';
-                        target.style.backgroundColor = 'var(--bg-hover)';
-                    }}
-                    onMouseLeave={(e) => {
-                        const target = e.currentTarget as HTMLElement;
-                        target.style.borderColor = 'var(--border-color)';
-                        target.style.color = 'var(--text-secondary)';
-                        target.style.backgroundColor = 'transparent';
-                    }}
+                    className={styles.addSectionCard}
                 >
-                    <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', border: '1px solid currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className={styles.addSectionIcon}>
                         <Plus size={24} />
                     </div>
-                    <span style={{ fontWeight: 600 }}>Add New Section</span>
+                    <span className={styles.addSectionLabel}>Add New Section</span>
                 </div>
             </div>
 
@@ -537,7 +499,7 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
                 panelClassName={styles.sectionModalPanel}
             >
                 {error && (
-                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', color: '#fca5a5', fontSize: '0.875rem' }}>
+                    <div className={styles.sectionError}>
                         {error}
                     </div>
                 )}
@@ -959,7 +921,7 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm 
                 <div className={styles.sectionHeaderActions} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className={styles.sectionDetailGrid}>
                 {enrolledStudents.length > 0 && (
                     <div className={styles.sectionToolbar}>
                         <div className={styles.sectionToolbarLeft}>
@@ -1047,7 +1009,7 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm 
                 )}
 
                 {filteredStudents.length === 0 ? (
-                    <div style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '0.75rem' }}>
+                    <div className={styles.emptyState}>
                         No students found in this section.
                     </div>
                 ) : (
@@ -1061,6 +1023,7 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm 
                             : StorageService.getSectionStudentActiveStatus(student.id, section.id);
                         const globalActive = StorageService.getStudentActiveStatus(student.id);
                         const isInactive = !globalActive || !sectionActive;
+                        const attendanceStatus = getAttendanceStatus(attStats.percentage);
 
                         return (
                             <div
@@ -1079,29 +1042,22 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm 
                                         if (!isInactive) toggleSelection(student.id);
                                     }
                                 }}
-                                style={{
-                                    backgroundColor: isInactive
-                                        ? 'var(--bg-hover)'
-                                        : isPending ? '#1e3a8a' : (isSelected ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-card)'),
-                                    borderRadius: '0.75rem',
-                                    padding: '1.5rem',
-                                    border: isPending ? '2px solid #312e81' : (isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)'),
-                                    boxShadow: isPending ? '0 0 0 3px rgba(30, 58, 138, 0.2), var(--shadow-sm)' : (isSelected ? 'var(--shadow-md)' : 'var(--shadow-sm)'),
-                                    cursor: isInactive ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                    transform: isPending ? 'scale(1.02)' : 'none',
-                                    color: isPending ? 'white' : 'inherit',
-                                    opacity: isInactive ? 0.6 : 1
-                                }}
+                                className={[
+                                    styles.studentCard,
+                                    isSelected ? styles.studentCardSelected : '',
+                                    isPending ? styles.studentCardPending : '',
+                                    isInactive ? styles.studentCardInactive : ''
+                                ].filter(Boolean).join(' ')}
                             >
                                 {(isSelected || isPending) && (
-                                    <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
-                                        <UserCheck size={20} color={isPending ? 'white' : 'var(--primary)'} />
+                                    <div className={[
+                                        styles.studentCheck,
+                                        isPending ? styles.studentCheckPending : styles.studentCheckDefault
+                                    ].join(' ')}>
+                                        <UserCheck size={20} />
                                     </div>
                                 )}
-                                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '0.35rem' }}>
+                                <div className={styles.studentActions}>
                                     <Button
                                         size="sm"
                                         variant="ghost"
@@ -1110,7 +1066,7 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm 
                                             handleToggleSectionStatus(student);
                                         }}
                                         aria-label={sectionActive ? 'Mark inactive' : 'Mark active'}
-                                        style={{ padding: '0.35rem' }}
+                                        className={styles.studentActionButton}
                                     >
                                         {sectionActive ? <Trash2 size={14} /> : <UserCheck size={14} />}
                                     </Button>
@@ -1124,85 +1080,88 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm 
                                             }}
                                             aria-label="Transfer student"
                                             disabled={isInactive}
-                                            style={{ padding: '0.35rem' }}
+                                            className={styles.studentActionButton}
                                         >
                                             <ArrowRightLeft size={14} />
                                         </Button>
                                     )}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
-                                    <div style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        borderRadius: '50%',
-                                        backgroundColor: isPending ? 'rgba(255,255,255,0.2)' : (isSelected ? 'var(--primary)' : 'var(--bg-hover)'),
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0,
-                                        color: (isPending || isSelected) ? 'white' : 'var(--primary)',
-                                        fontWeight: 700,
-                                        fontSize: '1.1rem',
-                                        transition: 'all 0.2s'
-                                    }}>
+                                <div className={styles.studentHeader}>
+                                    <div className={[
+                                        styles.studentAvatar,
+                                        isSelected ? styles.studentAvatarSelected : '',
+                                        isPending ? styles.studentAvatarPending : ''
+                                    ].filter(Boolean).join(' ')}>
                                         {formattedName.charAt(0)}
                                     </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: 600, color: isPending ? 'white' : 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '1rem' }}>
+                                    <div className={styles.studentInfo}>
+                                        <div className={[
+                                            styles.studentName,
+                                            isPending ? styles.studentNamePending : ''
+                                        ].filter(Boolean).join(' ')}>
                                             {formattedName}
                                         </div>
                                         {isInactive && (
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: isPending ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                            <div className={[
+                                                styles.studentInactiveLabel,
+                                                isPending ? styles.studentMetaPending : ''
+                                            ].filter(Boolean).join(' ')}>
                                                 Inactive
                                             </div>
                                         )}
-                                        <div style={{ fontSize: '0.8rem', color: isPending ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)' }}>
+                                        <div className={[
+                                            styles.studentMeta,
+                                            isPending ? styles.studentMetaPending : ''
+                                        ].filter(Boolean).join(' ')}>
                                             {calculateAge(student.birthDate)} yrs • {student.sex || 'N/A'}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div style={{ marginBottom: '1.25rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: isPending ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)' }}>Section Attendance</span>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: isPending ? 'white' : (attStats.percentage >= 75 ? '#10b981' : attStats.percentage >= 50 ? '#f59e0b' : '#ef4444') }}>
+                                <div className={styles.studentAttendance}>
+                                    <div className={styles.studentAttendanceHeader}>
+                                        <span className={[
+                                            styles.studentAttendanceLabel,
+                                            isPending ? styles.studentMetaPending : ''
+                                        ].filter(Boolean).join(' ')}>Section Attendance</span>
+                                        <span className={[
+                                            styles.studentAttendanceValue,
+                                            isPending ? styles.studentAttendanceValuePending : '',
+                                            !isPending ? styles[`studentAttendanceValue${attendanceStatus}`] : ''
+                                        ].filter(Boolean).join(' ')}>
                                             {attStats.total > 0 ? `${attStats.percentage}%` : 'No data'}
                                         </span>
                                     </div>
-                                    <div style={{ backgroundColor: isPending ? 'rgba(255,255,255,0.1)' : 'var(--bg-primary)', borderRadius: '0.25rem', height: '6px', overflow: 'hidden' }}>
-                                        <div style={{
-                                            width: `${attStats.percentage}%`,
-                                            backgroundColor: isPending ? 'white' : (attStats.percentage >= 75 ? '#10b981' : attStats.percentage >= 50 ? '#f59e0b' : '#ef4444'),
-                                            height: '100%',
-                                            transition: 'width 0.3s ease'
-                                        }}></div>
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: isPending ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)', marginTop: '0.4rem', textAlign: 'right' }}>
+                                    <progress
+                                        className={[
+                                            styles.studentAttendanceProgress,
+                                            isPending ? styles.studentAttendanceProgressPending : '',
+                                            !isPending ? styles[`studentAttendanceProgress${attendanceStatus}`] : ''
+                                        ].filter(Boolean).join(' ')}
+                                        value={attStats.percentage}
+                                        max={100}
+                                    />
+                                    <div className={[
+                                        styles.studentAttendanceFootnote,
+                                        isPending ? styles.studentMetaPending : ''
+                                    ].filter(Boolean).join(' ')}>
                                         {attStats.present} of {attStats.total} sessions present
                                     </div>
                                 </div>
 
                                 {isPending && (
-                                    <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.3)' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 700, marginBottom: '0.25rem', textTransform: 'uppercase' }}>
+                                    <div className={styles.pendingTransfer}>
+                                        <div className={styles.pendingTransferLabel}>
                                             Pending Transfer
                                         </div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white', marginBottom: '0.5rem' }}>
+                                        <div className={styles.pendingTransferTarget}>
                                             Move to: {allSections.find(s => s.id === pendingTransfers[student.id])?.name}
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={(e) => cancelTransfer(student.id, e)}
-                                            style={{ width: '100%', color: '#f87171', fontSize: '0.75rem', height: 'auto', padding: '0.4rem', backgroundColor: 'rgba(248, 113, 113, 0.1)', border: '1px solid rgba(248, 113, 113, 0.2)' }}
-                                            onMouseEnter={(e) => {
-                                                const target = e.currentTarget as HTMLElement;
-                                                target.style.backgroundColor = 'rgba(248, 113, 113, 0.2)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                const target = e.currentTarget as HTMLElement;
-                                                target.style.backgroundColor = 'rgba(248, 113, 113, 0.1)';
-                                            }}
+                                            className={styles.cancelTransferButton}
                                         >
                                             Cancel Transfer
                                         </Button>
@@ -1222,10 +1181,10 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm 
                     title={isBulkTransfer ? `Bulk Transfer (${selectedIds.length} students)` : `Transfer ${transferringStudent?.student.name}`}
                 >
                     <div>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                        <p className={styles.transferIntro}>
                             Select target section. All history will be moved.
                         </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div className={styles.transferList}>
                             {otherSections.map(s => (
                                 <Button
                                     key={s.id}
@@ -1233,21 +1192,14 @@ export const SectionDetail = ({ sectionId, onBack, onUnsavedChanges, searchTerm 
                                     variant="secondary"
                                     size="md"
                                     onClick={() => handleTransferStudent(s.id)}
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'flex-start',
-                                        padding: '1rem',
-                                        width: '100%',
-                                        textAlign: 'left'
-                                    }}
+                                    className={styles.transferOption}
                                 >
-                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</span>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{s.days?.join(', ')} • {s.startTime} - {s.endTime}</span>
+                                    <span className={styles.transferOptionTitle}>{s.name}</span>
+                                    <span className={styles.transferOptionMeta}>{s.days?.join(', ')} • {s.startTime} - {s.endTime}</span>
                                 </Button>
                             ))}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                        <div className={styles.transferActions}>
                             <Button variant="secondary" onClick={() => { setIsTransferModalOpen(false); setTransferringStudent(null); setIsBulkTransfer(false); }}>
                                 Cancel
                             </Button>

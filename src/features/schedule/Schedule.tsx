@@ -4,11 +4,12 @@ import { useConfirmation } from '../../shared/hooks/useConfirmation';
 import { StorageService } from '../../shared/utils/storage';
 import { Section, Course } from '../../shared/utils/types';
 import { Button } from '../../shared/components/Button';
+import styles from './Schedule.module.css';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const CLASS_MINUTES = 90;
 const TIME_SLOTS = [
-    '08:00', '09:45', '11:30', '13:15'
+    '08:00', '09:45', '11:30', '13:15', '14:00'
 ];
 const BLOCKED_TIMES = new Set(['13:15']);
 
@@ -60,25 +61,16 @@ export const Schedule = () => {
         return token;
     };
 
-    const hslToHex = (h: number, s: number, l: number) => {
-        const sat = s / 100;
-        const light = l / 100;
-        const c = (1 - Math.abs(2 * light - 1)) * sat;
-        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-        const m = light - c / 2;
-        let r = 0, g = 0, b = 0;
-        if (h < 60) { r = c; g = x; b = 0; }
-        else if (h < 120) { r = x; g = c; b = 0; }
-        else if (h < 180) { r = 0; g = c; b = x; }
-        else if (h < 240) { r = 0; g = x; b = c; }
-        else if (h < 300) { r = x; g = 0; b = c; }
-        else { r = c; g = 0; b = x; }
-        const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, '0');
-        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    const hashToIndex = (value: string, mod: number) => {
+        let hash = 0;
+        for (let i = 0; i < value.length; i += 1) {
+            hash = (hash * 31 + value.charCodeAt(i)) % mod;
+        }
+        return hash;
     };
 
-    const buildSectionColorMap = (_seed: number) => {
-        const map = new Map<string, string>();
+    const buildSectionToneMap = (_seed: number) => {
+        const map = new Map<string, number>();
         const sorted = [...sections].sort((a, b) => {
             const aKey = getSubjectKey(a);
             const bKey = getSubjectKey(b);
@@ -86,119 +78,33 @@ export const Schedule = () => {
             return a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
         });
 
-        const GOLDEN_ANGLE = 137.508;
-        const SATURATION = 85;
-        const L_BASE = 25;
-        const L_STEP = 18;
-        const L_LEVELS = 4;
-
         sorted.forEach((section, idx) => {
             if (section.color) {
-                map.set(section.id, section.color);
+                map.set(section.id, hashToIndex(section.color, 12));
                 return;
             }
-            const hue = (idx * GOLDEN_ANGLE) % 360;
-            const lightness = L_BASE + (idx % L_LEVELS) * L_STEP;
-            map.set(section.id, hslToHex(hue, SATURATION, lightness));
+            map.set(section.id, idx % 12);
         });
 
         return map;
     };
 
-    const sectionColorMap = useMemo(() => buildSectionColorMap(colorSeed), [sections, colorSeed]);
-    const getSectionColor = (section: Section) => sectionColorMap.get(section.id) || '#1F3A8A';
-
-    const parseColorToRgb = (color: string) => {
-        const hex = color.trim();
-        if (hex.startsWith('#')) {
-            const clean = hex.slice(1);
-            if (clean.length === 3) {
-                const r = parseInt(clean[0] + clean[0], 16);
-                const g = parseInt(clean[1] + clean[1], 16);
-                const b = parseInt(clean[2] + clean[2], 16);
-                return { r, g, b };
-            }
-            if (clean.length === 6) {
-                const r = parseInt(clean.slice(0, 2), 16);
-                const g = parseInt(clean.slice(2, 4), 16);
-                const b = parseInt(clean.slice(4, 6), 16);
-                return { r, g, b };
-            }
-            return null;
-        }
-        const rgbMatch = hex.match(/^rgba?\(([^)]+)\)$/i);
-        if (rgbMatch) {
-            const parts = rgbMatch[1].split(',').map(v => Number(v.trim()));
-            if (parts.length >= 3 && parts.every(n => Number.isFinite(n))) {
-                const [r, g, b] = parts;
-                return { r, g, b };
-            }
-        }
-        return null;
-    };
-
-    const relativeLuminance = (r: number, g: number, b: number) => {
-        const toLinear = (v: number) => {
-            const s = v / 255;
-            return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-        };
-        const R = toLinear(r);
-        const G = toLinear(g);
-        const B = toLinear(b);
-        return 0.2126 * R + 0.7152 * G + 0.0722 * B;
-    };
-
-    const rgbToHsl = (r: number, g: number, b: number) => {
-        const rn = r / 255;
-        const gn = g / 255;
-        const bn = b / 255;
-        const max = Math.max(rn, gn, bn);
-        const min = Math.min(rn, gn, bn);
-        const delta = max - min;
-        let h = 0;
-        let s = 0;
-        const l = (max + min) / 2;
-
-        if (delta !== 0) {
-            s = delta / (1 - Math.abs(2 * l - 1));
-            switch (max) {
-                case rn:
-                    h = ((gn - bn) / delta) % 6;
-                    break;
-                case gn:
-                    h = (bn - rn) / delta + 2;
-                    break;
-                default:
-                    h = (rn - gn) / delta + 4;
-                    break;
-            }
-            h = Math.round(h * 60);
-            if (h < 0) h += 360;
-        }
-
-        return { h, s, l };
-    };
-
-    const contrastRatio = (l1: number, l2: number) => {
-        const [lighter, darker] = l1 >= l2 ? [l1, l2] : [l2, l1];
-        return (lighter + 0.05) / (darker + 0.05);
-    };
-
-    const getContrastText = (color: string) => {
-        const rgb = parseColorToRgb(color);
-        if (!rgb) return '#0f172a';
-        const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-        const isGreenish = hsl.h >= 60 && hsl.h <= 170;
-        if (isGreenish && hsl.s >= 0.65) {
-            return '#ffffff';
-        }
-        const lum = relativeLuminance(rgb.r, rgb.g, rgb.b);
-        const whiteLum = relativeLuminance(255, 255, 255);
-        const darkLum = relativeLuminance(15, 23, 42);
-        const whiteContrast = contrastRatio(whiteLum, lum);
-        const darkContrast = contrastRatio(darkLum, lum);
-        return whiteContrast >= darkContrast ? '#ffffff' : '#0f172a';
-    };
+    const sectionToneMap = useMemo(() => buildSectionToneMap(colorSeed), [sections, colorSeed]);
+    const toneClasses = [
+        styles.sectionTone0,
+        styles.sectionTone1,
+        styles.sectionTone2,
+        styles.sectionTone3,
+        styles.sectionTone4,
+        styles.sectionTone5,
+        styles.sectionTone6,
+        styles.sectionTone7,
+        styles.sectionTone8,
+        styles.sectionTone9,
+        styles.sectionTone10,
+        styles.sectionTone11
+    ];
+    const getSectionToneClass = (section: Section) => toneClasses[sectionToneMap.get(section.id) ?? 0];
 
     const slotKey = (day: string, time: string) => `${day}-${time}`;
 
@@ -537,17 +443,17 @@ export const Schedule = () => {
     };
 
     return (
-        <div className="module">
-            <div className="module-header" style={{ gap: '1rem' }}>
+        <div className={`module ${styles.scheduleModule}`}>
+            <div className={`module-header ${styles.header}`}>
                 <div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>System Schedule</h1>
-                    <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>Drag and drop sections to reorganize the academy routine.</p>
+                    <h1 className={styles.headerTitle}>System Schedule</h1>
+                    <p className={styles.headerSubtitle}>Drag and drop sections to reorganize the academy routine.</p>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <div className={styles.headerActions}>
+                    <div className={styles.headerButtons}>
                         {hasUnsavedChanges && (
-                            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            <div className={styles.unsavedNotice}>
                                 Unsaved changes
                             </div>
                         )}
@@ -562,17 +468,8 @@ export const Schedule = () => {
                         <div
                             role="alert"
                             aria-live="polite"
-                            style={{
-                            backgroundColor: '#fee2e2',
-                            color: '#b91c1c',
-                            padding: '0.75rem 1.25rem',
-                            borderRadius: '0.5rem',
-                            border: '1px solid #fecaca',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                            animation: 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both'
-                        }}>
+                            className={styles.errorAlert}
+                        >
                             {error}
                         </div>
                     )}
@@ -580,37 +477,17 @@ export const Schedule = () => {
             </div>
 
             <div
-                className="schedule-board"
-                style={{
-                backgroundColor: 'var(--bg-card)',
-                borderRadius: '1rem',
-                border: '1px solid var(--border-color)',
-                boxShadow: 'var(--shadow-lg)',
-                overflow: 'hidden'
-            }}
+                className={`schedule-board ${styles.board}`}
             >
                 {/* Header Days */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '100px repeat(6, minmax(0, 1fr))',
-                    backgroundColor: 'rgba(0,0,0,0.02)',
-                    borderBottom: '1px solid var(--border-color)'
-                }}>
-                    <div style={{ padding: '0.75rem 0.5rem', borderRight: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className={styles.boardHeader}>
+                    <div className={styles.boardCorner}>
                         <Button size="sm" variant="secondary" onClick={() => window.print()}>
                             Print
                         </Button>
                     </div>
                     {DAYS.map(day => (
-                        <div key={day} style={{
-                            padding: '1rem',
-                            textAlign: 'center',
-                            fontWeight: 700,
-                            color: 'var(--text-primary)',
-                            fontSize: '0.9rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
-                        }}>
+                        <div key={day} className={styles.dayHeader}>
                             {day}
                         </div>
                     ))}
@@ -618,29 +495,21 @@ export const Schedule = () => {
 
                 {/* Grid Body */}
                 {timeSlots.map((time, timeIdx) => (
-                    <div key={time} style={{
-                        display: 'grid',
-                        gridTemplateColumns: '100px repeat(6, minmax(0, 1fr))',
-                        borderBottom: timeIdx === timeSlots.length - 1 ? 'none' : '1px solid var(--border-color)',
-                        minHeight: '96px'
-                    }}>
+                    <div
+                        key={time}
+                        className={[
+                            styles.timeRow,
+                            timeIdx === timeSlots.length - 1 ? styles.timeRowLast : ''
+                        ].filter(Boolean).join(' ')}
+                    >
                         {/* Time Column */}
-                        <div style={{
-                            padding: '0.7rem',
-                            borderRight: '1px solid var(--border-color)',
-                            backgroundColor: 'rgba(0,0,0,0.01)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.3rem'
-                        }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{time}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                        <div className={styles.timeCell}>
+                            <div className={styles.timeLabel}>{time}</div>
+                            <div className={styles.timeSubLabel}>
                                 {calculateEndTime(time)}
                             </div>
                             {BLOCKED_TIMES.has(time) && (
-                                <div style={{ fontSize: '0.6rem', color: '#b91c1c', fontWeight: 800, letterSpacing: '0.08em' }}>
+                                <div className={styles.timeBlockedLabel}>
                                     LUNCH
                                 </div>
                             )}
@@ -656,92 +525,49 @@ export const Schedule = () => {
                             return (
                                 <div
                                     key={`${day}-${time}`}
-                                    style={{
-                                        padding: '0.1rem',
-                                        borderRight: day === 'Sat' ? 'none' : '1px solid var(--border-color)',
-                                        backgroundColor: isDragHighlight ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
-                                        transition: 'background-color 0.2s',
-                                        position: 'relative',
-                                        minWidth: 0,
-                                        boxShadow: isDragHighlight ? 'inset 0 0 0 2px rgba(59, 130, 246, 0.25)' : 'none'
-                                    }}
+                                    className={[
+                                        styles.slot,
+                                        day === 'Sat' ? styles.slotLast : '',
+                                        isDragHighlight ? styles.slotDragHighlight : ''
+                                    ].filter(Boolean).join(' ')}
                                     onDragOver={(e) => handleDragOver(e, day, time)}
                                     onDragLeave={handleDragLeave}
                                     onDrop={(e) => handleDrop(e, day, time)}
-                                    onMouseEnter={(e) => {
-                                        if (!isDragHighlight) e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (!isDragHighlight) e.currentTarget.style.backgroundColor = 'transparent';
-                                    }}
                                 >
                                     <div
-                                            style={{
-                                                height: '100%',
-                                                borderRadius: '0.5rem',
-                                                padding: '0.15rem',
-                                                boxSizing: 'border-box',
-                                                display: 'flex',
-                                                alignItems: 'stretch',
-                                                justifyContent: 'stretch',
-                                                overflow: 'hidden',
-                                            backgroundColor: isBlocked ? 'rgba(185, 28, 28, 0.08)' : 'transparent',
-                                            transition: 'background-color 0.15s'
-                                        }}
+                                        className={[
+                                            styles.slotInner,
+                                            isBlocked ? styles.slotInnerBlocked : ''
+                                        ].filter(Boolean).join(' ')}
                                     >
                                         {section && !isBlocked ? (
                                             (() => {
-                                                const sectionColor = getSectionColor(section);
-                                                const textColor = getContrastText(sectionColor);
+                                                const toneClass = getSectionToneClass(section);
                                                 return (
                                                 <div
                                                     draggable
                                                     onDragStart={(e) => handleDragStart(e, section.id, day, time)}
                                                     onDragEnd={handleDragEnd}
-                                                    style={{
-                                                        width: '100%',
-                                                        height: '100%',
-                                                        backgroundColor: sectionColor,
-                                                        borderRadius: '0.7rem',
-                                                        padding: '0.8rem',
-                                                        border: `1px solid ${sectionColor}`,
-                                                        boxShadow: 'var(--shadow-sm)',
-                                                        cursor: 'grab',
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        gap: '0.4rem',
-                                                        transition: 'all 0.2s',
-                                                        backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 55%)`,
-                                                        zIndex: 1,
-                                                        boxSizing: 'border-box',
-                                                        overflow: 'hidden'
-                                                    }}
+                                                    className={[
+                                                        styles.sectionCard,
+                                                        toneClass
+                                                    ].join(' ')}
                                                     aria-label={`${section.name} ${time}-${calculateEndTime(time)} on ${day}`}
-                                                    onMouseEnter={(e) => {
-                                                        const target = e.currentTarget as HTMLElement;
-                                                        target.style.boxShadow = 'var(--shadow-md)';
-                                                        target.style.transform = 'scale(1.02)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        const target = e.currentTarget as HTMLElement;
-                                                        target.style.boxShadow = 'var(--shadow-sm)';
-                                                        target.style.transform = 'scale(1)';
-                                                    }}
                                                 >
-                                                    <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: textColor, lineHeight: 1.2, wordBreak: 'break-word' }}>
+                                                    <h3 className={styles.sectionCardTitle}>
                                                         {getCourseName(section.courseId)}
                                                     </h3>
-                                                    <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: textColor, lineHeight: 1.25, wordBreak: 'break-word' }}>
+                                                    <h4 className={styles.sectionCardSubtitle}>
                                                         {section.name}
                                                     </h4>
-                                                    <div style={{ marginTop: 'auto', fontSize: '0.85rem', fontWeight: 700, color: textColor, lineHeight: 1.2, wordBreak: 'break-word' }}>
+                                                    <div className={styles.sectionCardMeta}>
                                                         Room {section.roomId || 'N/A'}
                                                     </div>
                                                 </div>
                                                 );
                                             })()
                                         ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.1 }}>
+                                            <div className={styles.emptySlot}>
                                                 <PlusIcon size={24} />
                                             </div>
                                         )}
@@ -752,17 +578,6 @@ export const Schedule = () => {
                     </div>
                 ))}
             </div>
-
-            <style>
-                {`
-                    @keyframes shake {
-                        10%, 90% { transform: translate3d(-1px, 0, 0); }
-                        20%, 80% { transform: translate3d(2px, 0, 0); }
-                        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-                        40%, 60% { transform: translate3d(4px, 0, 0); }
-                    }
-                `}
-            </style>
         </div>
     );
 };

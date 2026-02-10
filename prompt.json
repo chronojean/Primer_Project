@@ -1,0 +1,60 @@
+{
+  "layout_global": "Diseña un panel web académico con sidebar vertical fija a la izquierda (ancho ~180px), fondo índigo oscuro, íconos lineales y texto claro. Incluye título “Academy” con un badge cuadrado e ícono. Menú vertical con estados activos resaltados en blanco. Footer con tres icon-buttons (tema, ayuda, ajustes). Main area claro con fondo lavanda y patrones de gradiente suave. Tipografías Baloo 2 para headings y Nunito para cuerpo.",
+  "dashboard": {
+    "header": "Crea un header con título grande “Dashboard” y dos botones a la derecha: “Clear Data” (secundario) y “Load Demo Data” (primario), ambos con ícono alineado.",
+    "overview_card": "Diseña una tarjeta con header “Overview” y un ícono de libro en un badge cuadrado. Dentro, dos métricas: “Active Courses” y “Professors” separadas por un divisor vertical.",
+    "students_overview_card": "Tarjeta con header “Students Overview”, tres métricas en grid: Total, Enrolled, Not Enrolled. Cada métrica con ícono y label, separadas por divisores.",
+    "course_attendance_section": "Sección con título “Course Attendance” e ícono verde. Grid de cards: nombre del curso, subtítulo “present/total”, badge circular con porcentaje y texto “attended”, barra de progreso con color según estado (excellent/good/warn/poor)."
+  },
+  "schedule": {
+    "header": "Título “System Schedule” con subtítulo. A la derecha: texto “Unsaved changes” y botones “Reset” y “Save changes”.",
+    "board": "Tablero con columnas de días (Mon–Sat) y filas de horarios. Primera columna fija con hora y hora fin. Bloque de 13:15 marcado “LUNCH” y deshabilitado. Cada celda puede contener tarjeta de sección draggable.",
+    "section_block_card": "Tarjeta de horario con color asignado por curso. Muestra nombre de curso (bold), nombre de sección, sala (Room). Fondo con gradiente sutil y sombra. Hover agranda ligeramente.",
+    "drag_over_slot": "Slot vacío con highlight azul (borde interno y fondo claro) al arrastrar un bloque válido."
+  },
+  "courses": {
+    "header_search": "Header con breadcrumbs y campo de búsqueda tipo pill a la derecha. Placeholder cambia según vista (courses/sections/students).",
+    "course_card": "Card con ícono de libro, nombre del curso (ellipsis), descripción recortada a 2 líneas. Footer con “X Students”, “Y Sections” y barra de asistencia con etiqueta de porcentaje. Acciones en esquina superior derecha: editar y borrar.",
+    "add_course_card": "Card punteada con ícono +, texto “Add New Course”, hover cambia borde a primario.",
+    "breadcrumbs": "“Courses > Course Name > Section Name”, links clicables con estado activo en color primario.",
+    "course_modal": "Modal con título “Add Course” o “Edit Course”. Form con inputs “Course Name” y “Description”. Acciones: Cancel (secondary) y Create/Update (primary)."
+  },
+  "sections": {
+    "section_grid_card": "Card con ícono de grupo, nombre de sección, profesor, días, horario, sala. Footer con número de estudiantes y barra de asistencia. Acciones pequeñas de editar/borrar arriba a la derecha.",
+    "add_section_card": "Card punteada con ícono + y texto “Add New Section”, hover cambia color y fondo.",
+    "section_modal_layout": "Modal ancho 75vw, dos columnas: Columna izquierda: select de Course y Professor, inputs de Section Name, Room, Start Date, End Date. Panel “Enroll Students” con lista de checkboxes. Columna derecha: panel “Schedule Blocks” con días y chips de horario.",
+    "schedule_chips": "Chips redondos con hora inicio/fin. Estado selected con gradiente y borde primario. Estado disabled con opacidad y cursor bloqueado."
+  },
+  "section_detail": {
+    "section_toolbar": "Barra superior con botón back, contador de estudiantes, badge de selección (punto animado), botones “Select All”, “Reset”, “Bulk Transfer”, “Save Changes”.",
+    "student_card_normal": "Tarjeta con avatar circular (inicial), nombre formateado (apellido primero), edad y sexo, barra de asistencia con porcentaje. Fondo blanco, borde sutil.",
+    "student_card_selected": "Borde primario y sombra más fuerte, ícono check visible en esquina.",
+    "student_card_pending_transfer": "Tarjeta azul oscuro, texto blanco. Panel “Pending Transfer” con destino y botón “Cancel Transfer”.",
+    "transfer_modal": "Modal con título “Transfer Student” o “Bulk Transfer”. Lista de secciones destino como botones con nombre y horario. Botón Cancel al final."
+  },
+  "attendance": {
+    "header": "Header con tabs “Hierarchy”, “Timeline”, “Drilldown” y buscador pill a la derecha. Tabs estilo segmented control con estado activo en primario.",
+    "hierarchy_course_cards": "Grid de tarjetas de curso con ícono, nombre, descripción breve, footer con número de secciones y flecha.",
+    "hierarchy_section_cards": "Grid de cards con nombre de sección, badge de alumnos, horario y sala. Card de “Back to Courses” con borde punteado.",
+    "dashboard_mark": "Panel superior con botones “Mark Attendance” / “History”. Subpanel de fecha con input date e indicador “Today’s Lesson”. Acciones de selección: Select All, Reset, Mark Present, Mark Absent. Mensaje verde de guardado.",
+    "summary_bar": "Barra superior con dos bloques: Present (verde) y Absent (rojo) mostrando conteos grandes.",
+    "student_chips": "Píldoras con inicial y nombre: Verde = presente, Rojo = ausente, Azul oscuro = seleccionado. Hover eleva sombra.",
+    "attendance_history": "Lista de fechas con cards clicables, mostrando fecha completa y % de asistencia.",
+    "timeline_view": "Agrupación por fecha con badge de día y año. Cards por sección con porcentaje grande, conteo de asistentes y botón para ver detalles (expand).",
+    "drilldown_view": "Acordeón por fecha, luego por sección, luego lista de asistentes presentes en cards pequeñas."
+  },
+  "students": {
+    "table_header": "Grid tipo tabla con columnas: expand, name, email, age, sex, courses, attendance, actions.",
+    "student_row": "Fila con botón expandir, nombre clicable, email, edad, sexo, cursos, barra de asistencia y acciones (edit/activate/deactivate).",
+    "expanded_panel": "Dos columnas: Course History con cards de secciones, badge Active/Past, botones Activate/Deactivate y barra de asistencia. Payment History embebido con tabla de pagos.",
+    "student_modal": "Form con full name, email, phone, birth date, sex (select). Acciones cancel/create-update."
+  },
+  "professors": {
+    "professors_table": "Tabla con headers ordenables: name, email, specialization. Filas con avatar circular y acciones editar/borrar.",
+    "professor_modal": "Form con name, email, specialization. Acciones cancel/create-update."
+  },
+  "payments": {
+    "payments_table": "Tabla ordenable por date, student, concept, amount. Monto en verde con `$`.",
+    "payments_modal": "Form con Student select (si global), Amount, Concept, Date. Botones cancel/save."
+  }
+}

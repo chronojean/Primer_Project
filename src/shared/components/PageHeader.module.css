@@ -1,0 +1,28 @@
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.pageHeaderCompact {
+    margin-bottom: 0;
+}
+
+.pageHeaderTitleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.pageHeaderTitle {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    margin: 0;
+}
+
+.pageHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
