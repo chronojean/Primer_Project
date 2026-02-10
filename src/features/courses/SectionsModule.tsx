@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StorageService } from '../../shared/utils/storage';
 import { Section, Course, Professor, Student, Enrollment, Attendance } from '../../shared/utils/types';
 import { Button } from '../../shared/components/Button';
@@ -18,6 +18,7 @@ interface SectionsModuleProps {
 export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, searchTerm = '' }: SectionsModuleProps) => {
     const { showConfirmation } = useConfirmation();
     const [sections, setSections] = useState<Section[]>([]);
+    const [allSections, setAllSections] = useState<Section[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
     const [professors, setProfessors] = useState<Professor[]>([]);
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -38,6 +39,7 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
         selectedStudentIds: [] as string[]
     });
     const [error, setError] = useState('');
+    const [selectedBlocks, setSelectedBlocks] = useState<Array<{ day: string; startTime: string }>>([]);
 
     const daysOfWeek = [
         { value: 'Mon', label: 'Mon' },
@@ -46,19 +48,78 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
         { value: 'Thu', label: 'Thu' },
         { value: 'Fri', label: 'Fri' },
         { value: 'Sat', label: 'Sat' },
-        { value: 'Sun', label: 'Sun' },
     ];
+
+    const blockDuration = 90;
+    const blockStartTimes = ['08:00', '09:45', '11:30', '14:00', '15:45', '17:30'];
+
+    const timeToMinutes = (time: string) => {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    const minutesToTime = (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+
+    const addMinutes = (time: string, minutes: number) => minutesToTime(timeToMinutes(time) + minutes);
+
+    const buildBlocksFromLegacy = (days: string[], startTime: string, endTime: string) => {
+        if (!days.length || !startTime || !endTime) return [];
+        const startMinutes = timeToMinutes(startTime);
+        const endMinutes = timeToMinutes(endTime);
+        if (endMinutes <= startMinutes) return [];
+        const blocks: Array<{ day: string; startTime: string }> = [];
+        for (let t = startMinutes; t + blockDuration <= endMinutes; t += blockDuration) {
+            const blockStart = minutesToTime(t);
+            days.forEach(day => blocks.push({ day, startTime: blockStart }));
+        }
+        return blocks;
+    };
+
+    const getSectionBlocks = (section: Section) => {
+        if (section.scheduleBlocks && section.scheduleBlocks.length > 0) {
+            return section.scheduleBlocks.map(b => ({ day: b.day, startTime: b.startTime }));
+        }
+        if (section.days?.length && section.startTime && section.endTime) {
+            return buildBlocksFromLegacy(section.days, section.startTime, section.endTime);
+        }
+        return [];
+    };
+
+    const getSectionIntervals = (section: Section) => {
+        if (section.scheduleBlocks && section.scheduleBlocks.length > 0) {
+            return section.scheduleBlocks.map(b => ({
+                day: b.day,
+                start: timeToMinutes(b.startTime),
+                end: timeToMinutes(addMinutes(b.startTime, blockDuration))
+            }));
+        }
+        if (section.days?.length && section.startTime && section.endTime) {
+            const start = timeToMinutes(section.startTime);
+            const end = timeToMinutes(section.endTime);
+            return section.days.map(day => ({ day, start, end }));
+        }
+        return [];
+    };
+
+    const isSectionFinished = (section: Section) => {
+        if (!section.endDate) return false;
+        const today = new Date().toISOString().split('T')[0];
+        return section.endDate < today;
+    };
 
     useEffect(() => {
         loadData();
     }, [courseId]);
 
     const loadData = () => {
-        let allSections = StorageService.getSections();
-        if (courseId) {
-            allSections = allSections.filter(s => s.courseId === courseId);
-        }
-        setSections(allSections);
+        const loadedSections = StorageService.getSections();
+        setAllSections(loadedSections);
+        const visibleSections = courseId ? loadedSections.filter(s => s.courseId === courseId) : loadedSections;
+        setSections(visibleSections);
         setCourses(StorageService.getCourses());
         setProfessors(StorageService.getProfessors());
         setEnrollments(StorageService.getEnrollments());
@@ -83,6 +144,8 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
                 roomId: section.roomId,
                 selectedStudentIds: currentEnrolledIds
             });
+            const existingBlocks = getSectionBlocks(section);
+            setSelectedBlocks(existingBlocks);
         } else {
             setEditingSection(null);
             setFormData({
@@ -97,6 +160,7 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
                 roomId: '',
                 selectedStudentIds: []
             });
+            setSelectedBlocks([]);
         }
         setIsModalOpen(true);
     };
@@ -105,15 +169,7 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
         setIsModalOpen(false);
         setEditingSection(null);
         setError('');
-    };
-
-    const toggleDay = (day: string) => {
-        setFormData(prev => ({
-            ...prev,
-            days: prev.days.includes(day)
-                ? prev.days.filter(d => d !== day)
-                : [...prev.days, day]
-        }));
+        setSelectedBlocks([]);
     };
 
     const toggleStudent = (studentId: string) => {
@@ -125,26 +181,44 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
         }));
     };
 
+    const toggleBlockSelection = (day: string, startTime: string) => {
+        const key = `${day}|${startTime}`;
+        if (occupiedBlockKeys.has(key)) return;
+        setSelectedBlocks(prev => {
+            const exists = prev.some(block => block.day === day && block.startTime === startTime);
+            if (exists) {
+                return prev.filter(block => !(block.day === day && block.startTime === startTime));
+            }
+            return [...prev, { day, startTime }];
+        });
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        if (formData.days.length === 0) {
-            setError('Please select at least one day.');
+        if (selectedBlocks.length === 0) {
+            setError('Please select at least one schedule block.');
             return;
         }
 
         try {
+            const scheduleBlocks = selectedBlocks.map(block => ({ day: block.day, startTime: block.startTime }));
+            const uniqueDays = Array.from(new Set(scheduleBlocks.map(block => block.day)));
+            const earliestStart = scheduleBlocks.reduce((min, b) => Math.min(min, timeToMinutes(b.startTime)), Number.POSITIVE_INFINITY);
+            const latestEnd = scheduleBlocks.reduce((max, b) => Math.max(max, timeToMinutes(addMinutes(b.startTime, blockDuration))), 0);
+
             const sectionData = {
                 courseId: formData.courseId,
                 professorId: formData.professorId || null,
                 name: formData.name,
-                days: formData.days,
-                startTime: formData.startTime,
-                endTime: formData.endTime,
+                days: uniqueDays,
+                startTime: minutesToTime(earliestStart),
+                endTime: minutesToTime(latestEnd),
                 startDate: formData.startDate || undefined,
                 endDate: formData.endDate || undefined,
-                roomId: formData.roomId
+                roomId: formData.roomId,
+                scheduleBlocks
             };
 
             let sectionId = editingSection ? editingSection.id : crypto.randomUUID();
@@ -215,10 +289,52 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
             e.courseId === formData.courseId
         );
         if (existingEnrollment) {
+            const enrolledSection = allSections.find(s => s.id === existingEnrollment.sectionId);
+            if (enrolledSection && isSectionFinished(enrolledSection)) {
+                return false;
+            }
             return existingEnrollment.sectionId !== (editingSection?.id || 'new');
         }
         return false;
     };
+
+    const occupiedBlockKeys = useMemo(() => {
+        const intervals: Array<{ day: string; start: number; end: number }> = [];
+        allSections.forEach(section => {
+            if (editingSection && section.id === editingSection.id) return;
+            if (isSectionFinished(section)) return;
+            intervals.push(...getSectionIntervals(section));
+        });
+
+        const keys = new Set<string>();
+        daysOfWeek.forEach(day => {
+            blockStartTimes.forEach(time => {
+                const start = timeToMinutes(time);
+                const end = start + blockDuration;
+                const overlaps = intervals.some(interval =>
+                    interval.day === day.value && interval.start < end && interval.end > start
+                );
+                if (overlaps) {
+                    keys.add(`${day.value}|${time}`);
+                }
+            });
+        });
+        return keys;
+    }, [allSections, editingSection, daysOfWeek, blockStartTimes, blockDuration, getSectionIntervals, isSectionFinished, timeToMinutes]);
+
+    const availableBlocksByDay = useMemo(() => {
+        return daysOfWeek.map(day => ({
+            ...day,
+            times: blockStartTimes.map(time => ({
+                time,
+                disabled: occupiedBlockKeys.has(`${day.value}|${time}`)
+            }))
+        }));
+    }, [occupiedBlockKeys, daysOfWeek, blockStartTimes]);
+
+    const selectedBlockKeys = useMemo(() => {
+        return new Set(selectedBlocks.map(block => `${block.day}|${block.startTime}`));
+    }, [selectedBlocks]);
 
     const getSectionAttendanceStats = (sectionId: string) => {
         const sectionAttendance = attendance.filter(a => a.sectionId === sectionId);
@@ -338,7 +454,8 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                     <div>{section.days?.join(', ')}</div>
-                                    <div>{section.startTime} - {section.endTime} • {section.roomId ? `Room ${section.roomId}` : 'No Room'}</div>
+                                    <div>{section.startTime} - {section.endTime}</div>
+                                    <div>{section.roomId ? `Room ${section.roomId}` : 'No Room'}</div>
                                 </div>
 
                                 <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -417,123 +534,150 @@ export const SectionsModule = ({ courseId, hideHeader = false, onSelectSection, 
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 title={editingSection ? 'Edit Section' : 'Add Section'}
+                panelClassName={styles.sectionModalPanel}
             >
                 {error && (
                     <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', color: '#fca5a5', fontSize: '0.875rem' }}>
                         {error}
                     </div>
                 )}
-                <form onSubmit={handleSubmit}>
-                    <Select
-                        label="Course"
-                        value={formData.courseId}
-                        onChange={e => setFormData({ ...formData, courseId: e.target.value })}
-                        options={courses.map(c => ({ value: c.id, label: c.name }))}
-                        required
-                        disabled={!!editingSection || !!courseId}
-                    />
-                    <Select
-                        label="Professor"
-                        value={formData.professorId}
-                        onChange={e => setFormData({ ...formData, professorId: e.target.value })}
-                        options={[{ value: '', label: 'Select Professor' }, ...professors.map(p => ({ value: p.id, label: p.name }))]}
-                    />
-                    <Input
-                        label="Section Name"
-                        value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        required
-                    />
-
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#d4d4d8' }}>Days</label>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            {daysOfWeek.map(day => {
-                                const isSelected = formData.days.includes(day.value);
-                                return (
-                                    <Button
-                                        key={day.value}
-                                        type="button"
-                                        size="sm"
-                                        variant={isSelected ? 'primary' : 'secondary'}
-                                        onClick={() => toggleDay(day.value)}
-                                    >
-                                        {day.label}
-                                    </Button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <Input
-                            label="Start Time"
-                            type="time"
-                            value={formData.startTime}
-                            onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                            required
-                        />
-                        <Input
-                            label="End Time"
-                            type="time"
-                            value={formData.endTime}
-                            onChange={e => setFormData({ ...formData, endTime: e.target.value })}
-                            required
-                        />
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <Input
-                            label="Start Date"
-                            type="date"
-                            value={formData.startDate}
-                            onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-                        />
-                        <Input
-                            label="End Date"
-                            type="date"
-                            value={formData.endDate}
-                            onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                        />
-                    </div>
-
-                    <Input
-                        label="Room"
-                        value={formData.roomId}
-                        onChange={e => setFormData({ ...formData, roomId: e.target.value })}
-                        required
-                    />
-
-                    <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, color: 'var(--text-primary)' }}>Enroll Students</label>
-                        <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '0.375rem', padding: '0.5rem', backgroundColor: 'var(--bg-primary)' }}>
-                            {(() => {
-                                const availableStudents = studentsForEnrollment.filter(s => !isStudentUnavailable(s.id));
-                                if (availableStudents.length === 0) {
-                                    return <p style={{ color: 'var(--text-secondary)', textAlign: 'center', margin: '1rem 0' }}>No students available for this course.</p>;
-                                }
-                                return availableStudents.map(student => (
-                                    <div key={student.id} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem', borderRadius: '0.25rem', transition: 'background-color 0.15s' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            id={`student-${student.id}`}
-                                            checked={formData.selectedStudentIds.includes(student.id)}
-                                            onChange={() => toggleStudent(student.id)}
-                                            style={{ marginRight: '0.75rem', width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                <form onSubmit={handleSubmit} className={styles.sectionModalForm}>
+                    <div className={styles.sectionModalBody}>
+                        <div className={styles.sectionModalGrid}>
+                            <div className={styles.sectionColumn}>
+                                <div className={styles.sectionRow}>
+                                    <div className={styles.sectionField}>
+                                        <Select
+                                            label="Course"
+                                            value={formData.courseId}
+                                            onChange={e => setFormData({ ...formData, courseId: e.target.value })}
+                                            options={courses.map(c => ({ value: c.id, label: c.name }))}
+                                            required
+                                            disabled={!!editingSection || !!courseId}
                                         />
-                                        <label htmlFor={`student-${student.id}`} style={{ cursor: 'pointer', flex: 1, color: 'var(--text-primary)' }}>
-                                            {student.name}
-                                        </label>
                                     </div>
-                                ));
-                            })()}
+                                    <div className={styles.sectionField}>
+                                        <Select
+                                            label="Professor"
+                                            value={formData.professorId}
+                                            onChange={e => setFormData({ ...formData, professorId: e.target.value })}
+                                            options={[{ value: '', label: 'Select Professor' }, ...professors.map(p => ({ value: p.id, label: p.name }))]}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className={styles.sectionRow}>
+                                    <div className={styles.sectionField}>
+                                        <Input
+                                            label="Section Name"
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className={styles.sectionField}>
+                                        <Input
+                                            label="Room"
+                                            value={formData.roomId}
+                                            onChange={e => setFormData({ ...formData, roomId: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className={styles.sectionRow}>
+                                    <div className={styles.sectionField}>
+                                        <Input
+                                            label="Start Date"
+                                            type="date"
+                                            value={formData.startDate}
+                                            onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className={styles.sectionField}>
+                                        <Input
+                                            label="End Date"
+                                            type="date"
+                                            value={formData.endDate}
+                                            onChange={e => setFormData({ ...formData, endDate: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className={styles.sectionPanel}>
+                                    <label className={styles.enrollLabel}>Enroll Students</label>
+                                    <div className={styles.enrollList}>
+                                        {(() => {
+                                            const availableStudents = studentsForEnrollment.filter(s => !isStudentUnavailable(s.id));
+                                            if (availableStudents.length === 0) {
+                                                return <p className={styles.enrollEmpty}>No students available for this course.</p>;
+                                            }
+                                            return availableStudents.map(student => (
+                                                <div
+                                                    key={student.id}
+                                                    className={styles.enrollRow}
+                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        id={`student-${student.id}`}
+                                                        checked={formData.selectedStudentIds.includes(student.id)}
+                                                        onChange={() => toggleStudent(student.id)}
+                                                        className={styles.enrollCheckbox}
+                                                    />
+                                                    <label htmlFor={`student-${student.id}`} className={styles.enrollName}>
+                                                        {student.name}
+                                                    </label>
+                                                </div>
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={styles.sectionColumn}>
+                                <div className={styles.sectionPanel}>
+                                    <div className={styles.scheduleHeader}>
+                                        <label className={styles.scheduleLabel}>Schedule Blocks</label>
+                                        <span className={styles.scheduleHint}>Taken blocks are disabled.</span>
+                                    </div>
+                                    <div className={styles.blockGrid}>
+                                        {availableBlocksByDay.map(day => (
+                                            <div key={day.value} className={styles.blockDay}>
+                                                <div className={styles.blockDayLabel}>{day.label}</div>
+                                                <div className={styles.blockChips}>
+                                                    {day.times.map(({ time, disabled }) => {
+                                                        const key = `${day.value}|${time}`;
+                                                        const isSelected = selectedBlockKeys.has(key);
+                                                        const endTime = addMinutes(time, blockDuration);
+                                                        return (
+                                                            <button
+                                                                key={key}
+                                                                type="button"
+                                                                className={`${styles.blockChip} ${isSelected ? styles.blockChipSelected : ''} ${disabled ? styles.blockChipDisabled : ''}`}
+                                                                onClick={() => toggleBlockSelection(day.value, time)}
+                                                                aria-pressed={isSelected}
+                                                                disabled={disabled}
+                                                            >
+                                                                <span className={styles.blockChipTime}>{time}</span>
+                                                                <span className={styles.blockChipMeta}>{endTime}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className={styles.blockFooter}>
+                                        {selectedBlocks.length} selected
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+                    <div className={styles.sectionModalActions}>
                         <Button type="button" variant="secondary" onClick={handleCloseModal}>Cancel</Button>
                         <Button type="submit">{editingSection ? 'Update' : 'Create'}</Button>
                     </div>

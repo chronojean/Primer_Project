@@ -5,7 +5,7 @@ import { StorageService } from '../../shared/utils/storage';
 import { Section, Course } from '../../shared/utils/types';
 import { Button } from '../../shared/components/Button';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const CLASS_MINUTES = 90;
 const TIME_SLOTS = [
     '08:00', '09:45', '11:30', '13:15'
@@ -40,8 +40,13 @@ export const Schedule = () => {
 
     const loadData = () => {
         const storedSections = StorageService.getSections();
-        setOriginalSections(cloneSections(storedSections));
-        setSections(cloneSections(storedSections));
+        const today = new Date().toISOString().split('T')[0];
+        const activeSections = storedSections.filter(section => {
+            if (!section.endDate) return true;
+            return section.endDate >= today;
+        });
+        setOriginalSections(cloneSections(activeSections));
+        setSections(cloneSections(activeSections));
         setCourses(StorageService.getCourses());
     };
 
@@ -574,21 +579,28 @@ export const Schedule = () => {
                 </div>
             </div>
 
-            <div style={{
+            <div
+                className="schedule-board"
+                style={{
                 backgroundColor: 'var(--bg-card)',
                 borderRadius: '1rem',
                 border: '1px solid var(--border-color)',
                 boxShadow: 'var(--shadow-lg)',
                 overflow: 'hidden'
-            }}>
+            }}
+            >
                 {/* Header Days */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '100px repeat(7, minmax(0, 1fr))',
+                    gridTemplateColumns: '100px repeat(6, minmax(0, 1fr))',
                     backgroundColor: 'rgba(0,0,0,0.02)',
                     borderBottom: '1px solid var(--border-color)'
                 }}>
-                    <div style={{ padding: '1rem', borderRight: '1px solid var(--border-color)' }}></div>
+                    <div style={{ padding: '0.75rem 0.5rem', borderRight: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Button size="sm" variant="secondary" onClick={() => window.print()}>
+                            Print
+                        </Button>
+                    </div>
                     {DAYS.map(day => (
                         <div key={day} style={{
                             padding: '1rem',
@@ -608,13 +620,13 @@ export const Schedule = () => {
                 {timeSlots.map((time, timeIdx) => (
                     <div key={time} style={{
                         display: 'grid',
-                        gridTemplateColumns: '100px repeat(7, minmax(0, 1fr))',
+                        gridTemplateColumns: '100px repeat(6, minmax(0, 1fr))',
                         borderBottom: timeIdx === timeSlots.length - 1 ? 'none' : '1px solid var(--border-color)',
-                        minHeight: '120px'
+                        minHeight: '96px'
                     }}>
                         {/* Time Column */}
                         <div style={{
-                            padding: '1rem',
+                            padding: '0.7rem',
                             borderRight: '1px solid var(--border-color)',
                             backgroundColor: 'rgba(0,0,0,0.01)',
                             display: 'flex',
@@ -623,12 +635,12 @@ export const Schedule = () => {
                             justifyContent: 'center',
                             gap: '0.3rem'
                         }}>
-                            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>{time}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{time}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
                                 {calculateEndTime(time)}
                             </div>
                             {BLOCKED_TIMES.has(time) && (
-                                <div style={{ fontSize: '0.65rem', color: '#b91c1c', fontWeight: 800, letterSpacing: '0.08em' }}>
+                                <div style={{ fontSize: '0.6rem', color: '#b91c1c', fontWeight: 800, letterSpacing: '0.08em' }}>
                                     LUNCH
                                 </div>
                             )}
@@ -645,8 +657,8 @@ export const Schedule = () => {
                                 <div
                                     key={`${day}-${time}`}
                                     style={{
-                                        padding: '0.5rem',
-                                        borderRight: day === 'Sun' ? 'none' : '1px solid var(--border-color)',
+                                        padding: '0.1rem',
+                                        borderRight: day === 'Sat' ? 'none' : '1px solid var(--border-color)',
                                         backgroundColor: isDragHighlight ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
                                         transition: 'background-color 0.2s',
                                         position: 'relative',
@@ -664,15 +676,15 @@ export const Schedule = () => {
                                     }}
                                 >
                                     <div
-                                        style={{
-                                            height: '100%',
-                                            borderRadius: '0.85rem',
-                                            padding: '0.35rem',
-                                            boxSizing: 'border-box',
-                                            display: 'flex',
-                                            alignItems: 'stretch',
-                                            justifyContent: 'stretch',
-                                            overflow: 'hidden',
+                                            style={{
+                                                height: '100%',
+                                                borderRadius: '0.5rem',
+                                                padding: '0.15rem',
+                                                boxSizing: 'border-box',
+                                                display: 'flex',
+                                                alignItems: 'stretch',
+                                                justifyContent: 'stretch',
+                                                overflow: 'hidden',
                                             backgroundColor: isBlocked ? 'rgba(185, 28, 28, 0.08)' : 'transparent',
                                             transition: 'background-color 0.15s'
                                         }}
@@ -719,9 +731,6 @@ export const Schedule = () => {
                                                     <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: textColor, lineHeight: 1.2, wordBreak: 'break-word' }}>
                                                         {getCourseName(section.courseId)}
                                                     </h3>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: textColor, lineHeight: 1.2, wordBreak: 'break-word' }}>
-                                                        {time} - {calculateEndTime(time)}
-                                                    </div>
                                                     <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: textColor, lineHeight: 1.25, wordBreak: 'break-word' }}>
                                                         {section.name}
                                                     </h4>

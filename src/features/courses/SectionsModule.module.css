@@ -43,6 +43,238 @@
     font-weight: 600;
 }
 
+.sectionModalForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+:global(.modal-panel).sectionModalPanel {
+    width: 75vw;
+    max-width: 1200px;
+    max-height: 85vh;
+}
+
+.sectionModalBody {
+    max-height: min(65vh, 700px);
+    overflow-y: auto;
+    padding: 0.25rem 0.5rem 0.5rem 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.sectionModalGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: 1.5rem;
+    column-gap: 2.5rem;
+    min-width: 0;
+}
+
+.sectionColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.sectionRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2.5rem;
+    row-gap: 1rem;
+}
+
+.sectionField {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.sectionPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background-color: var(--bg-primary);
+    min-height: 260px;
+}
+
+.scheduleBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background-color: var(--bg-primary);
+}
+
+.scheduleHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.scheduleLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.scheduleHint {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.blockGrid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.blockDay {
+    border: 1px solid var(--border-color);
+    border-radius: 0.6rem;
+    padding: 0.6rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+}
+
+.blockDayLabel {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.blockChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.blockChip {
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.blockChip:hover {
+    transform: translateY(-1px);
+    border-color: var(--primary);
+}
+
+.blockChipSelected {
+    background: linear-gradient(135deg, rgba(255, 138, 61, 0.18), rgba(96, 165, 250, 0.16));
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+
+.blockChipDisabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: rgba(148, 163, 184, 0.15);
+    border-color: rgba(148, 163, 184, 0.3);
+    color: var(--text-secondary);
+    box-shadow: none;
+    transform: none;
+}
+
+.blockChipDisabled:hover {
+    transform: none;
+    border-color: rgba(148, 163, 184, 0.3);
+}
+
+.blockChipTime {
+    font-weight: 700;
+}
+
+.blockChipMeta {
+    font-size: 0.7rem;
+    color: inherit;
+    opacity: 0.75;
+}
+
+.blockFooter {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: right;
+}
+
+.enrollLabel {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.enrollList {
+    max-height: none;
+    height: 100%;
+    min-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.6rem;
+    background-color: var(--bg-primary);
+}
+
+.enrollEmpty {
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.enrollRow {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 0.35rem;
+    transition: background-color 0.15s;
+}
+
+.enrollCheckbox {
+    margin-right: 0.75rem;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+}
+
+.enrollName {
+    cursor: pointer;
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.sectionModalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+@media (min-width: 700px) {
+    .sectionModalGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 .sectionToolbar {
     grid-column: 1 / -1;
     display: flex;

@@ -217,6 +217,12 @@ export const Attendance = () => {
         setSelectedIds([]);
     };
 
+    const handleReset = () => {
+        setAttendanceRecords({ ...persistedRecords.current });
+        setHasUnsavedChanges(false);
+        setSelectedIds([]);
+    };
+
     const handleSave = () => {
         if (!selectedSectionId || !selectedDate) return;
 
@@ -564,11 +570,11 @@ export const Attendance = () => {
                             <Button
                                 size="sm"
                                 variant="secondary"
-                                onClick={() => setSelectedIds([])}
-                                disabled={selectedIds.length === 0}
+                                onClick={handleReset}
+                                disabled={!hasUnsavedChanges && selectedIds.length === 0}
                                 style={{ fontWeight: 600 }}
                             >
-                                Clear
+                                Reset
                             </Button>
                         </div>
 

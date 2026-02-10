@@ -7,9 +7,10 @@ interface ModalProps {
     onClose: () => void;
     title: string;
     children: React.ReactNode;
+    panelClassName?: string;
 }
 
-export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, children, panelClassName }: ModalProps) => {
     if (!isOpen) return null;
     const titleId = useId();
 
@@ -19,7 +20,7 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className="modal-panel"
+                className={`modal-panel${panelClassName ? ` ${panelClassName}` : ''}`}
             >
                 <div className="modal-header">
                     <h2 id={titleId} className="modal-title">{title}</h2>

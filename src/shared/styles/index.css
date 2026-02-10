@@ -536,3 +536,44 @@ main {
 ::-webkit-scrollbar-thumb:hover {
   background: #a5b4fc;
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .sidebar,
+  .module-header,
+  .module-actions,
+  button {
+    display: none !important;
+  }
+
+  .app-shell {
+    min-height: auto;
+    width: 100%;
+  }
+
+  .app-main {
+    margin: 0;
+    overflow: visible;
+  }
+
+  .page-container {
+    padding: 0;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+  }
+
+  .schedule-board {
+    box-shadow: none;
+    border: 1px solid #000;
+    width: 100%;
+    max-width: none;
+    page-break-inside: avoid;
+  }
+}

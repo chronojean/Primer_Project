@@ -218,12 +218,33 @@ export const StorageService = {
     getEnrollments: () => StorageService.getData<Enrollment>(STORAGE_KEYS.ENROLLMENTS),
     enrollStudent: (enrollment: Enrollment) => {
         const enrollments = StorageService.getEnrollments();
-        // Validate: Student can be in only ONE section per course
-        const existing = enrollments.find(e =>
+        const sections = StorageService.getSections();
+        const today = new Date().toISOString().split('T')[0];
+        const isSectionFinished = (sectionId: string) => {
+            const section = sections.find(s => s.id === sectionId);
+            if (!section?.endDate) return false;
+            return section.endDate < today;
+        };
+
+        // Validate: Student can be in only ONE active section per course
+        const existingForCourse = enrollments.filter(e =>
             e.studentId === enrollment.studentId && e.courseId === enrollment.courseId
         );
-        if (existing) {
+        const hasActive = existingForCourse.some(e => !isSectionFinished(e.sectionId));
+        if (hasActive) {
             throw new Error('Student is already enrolled in a section for this course.');
+        }
+        // Remove finished enrollments for this course
+        if (existingForCourse.length > 0) {
+            const finishedIds = new Set(
+                existingForCourse.filter(e => isSectionFinished(e.sectionId)).map(e => e.id)
+            );
+            if (finishedIds.size > 0) {
+                const filtered = enrollments.filter(e => !finishedIds.has(e.id));
+                StorageService.saveData(STORAGE_KEYS.ENROLLMENTS, filtered);
+                enrollments.length = 0;
+                enrollments.push(...filtered);
+            }
         }
         enrollments.push(enrollment);
         StorageService.saveData(STORAGE_KEYS.ENROLLMENTS, enrollments);

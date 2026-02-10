@@ -160,7 +160,7 @@ export const Dashboard = () => {
                 <div className="card">
                     <div className="card-header">
                         <div className={styles.cardHeaderIcon}>
-                            <BookOpen size={24} color="var(--text-primary)" />
+                            <BookOpen size={24} />
                         </div>
                         <h2 className={styles.cardHeaderTitle}>Overview</h2>
                     </div>
@@ -181,7 +181,7 @@ export const Dashboard = () => {
                 <div className="card">
                     <div className="card-header">
                         <div className={styles.cardHeaderIcon}>
-                            <Users size={24} color="var(--text-primary)" />
+                            <Users size={24} />
                         </div>
                         <h2 className={styles.cardHeaderTitle}>Students Overview</h2>
                     </div>
@@ -193,14 +193,14 @@ export const Dashboard = () => {
                         </div>
                         <div className={styles.statDividerWide}>
                             <div className={styles.statIconRow}>
-                                <UserCheck size={16} color="var(--text-primary)" />
+                                <UserCheck size={16} />
                                 <span className={styles.statLabel}>Enrolled</span>
                             </div>
                             <p className={styles.statValue}>{stats.enrolledStudents}</p>
                         </div>
                         <div className={styles.statDividerWide}>
                             <div className={styles.statIconRow}>
-                                <UserX size={16} color="var(--text-primary)" />
+                                <UserX size={16} />
                                 <span className={styles.statLabel}>Not Enrolled</span>
                             </div>
                             <p className={styles.statValue}>{stats.notEnrolledStudents}</p>
